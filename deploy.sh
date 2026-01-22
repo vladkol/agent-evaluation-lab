@@ -142,6 +142,7 @@ echo "📦 Enabling required Google Cloud APIs..."
 gcloud services enable \
     aiplatform.googleapis.com \
     run.googleapis.com \
+    cloudbuild.googleapis.com \
     serviceusage.googleapis.com \
     monitoring.googleapis.com \
     logging.googleapis.com \
