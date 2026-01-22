@@ -1,0 +1,59 @@
+steps:
+- name: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+  entrypoint: /bin/bash
+  args:
+      - "-c"
+      - |
+        if [[ "$_COMMIT_SHORT_HASH" != "" ]]; then
+          export COMMIT_SHORT_HASH=$_COMMIT_SHORT_HASH
+        elif [[ "$SHORT_SHA" != "" ]]; then
+          export COMMIT_SHORT_HASH=$SHORT_SHA
+        else
+          export COMMIT_SHORT_HASH=$(git rev-parse --short HEAD || echo "latest")
+        fi
+        export COMMIT_REVISION_TAG="c-$${COMMIT_SHORT_HASH}"
+        echo "Deploying with revision tag: $$COMMIT_REVISION_TAG"
+        set -e
+        if [[ "$_GOOGLE_CLOUD_PROJECT" != "" ]]; then
+            export GOOGLE_CLOUD_PROJECT=$_GOOGLE_CLOUD_PROJECT
+        else
+            export GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+        fi
+        if [[ "$_GOOGLE_CLOUD_LOCATION" != "" ]]; then
+            export GOOGLE_CLOUD_LOCATION=$_GOOGLE_CLOUD_LOCATION
+        else
+            export GOOGLE_CLOUD_LOCATION="global"
+        fi
+        if [[ "$_GOOGLE_CLOUD_REGION" != "" ]]; then
+            export GOOGLE_CLOUD_REGION=$_GOOGLE_CLOUD_REGION
+        else
+            export GOOGLE_CLOUD_REGION="us-central1"
+        fi
+
+        # Install uv and sync dependencies.
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $$HOME/.local/bin/env
+        uv sync
+
+        # You would run "classic" unit tests here.
+        # If they fail, the deployment will stop here.
+        # ...
+
+        # Deploy services with the revision tag.
+        source ./deploy.sh --revision-tag $$COMMIT_REVISION_TAG --no-redeploy
+
+        # Run evaluation.
+        uv run -m evaluator.evaluate_agent
+        # If evaluation fails, the deployment will stop here.
+
+        # If evaluation passes, it will continue with promoting the revisions to serve 100% of traffic.
+        echo "Promoting revisions $$COMMIT_REVISION_TAG to serve 100% of traffic."
+        gcloud run services update-traffic researcher --to-tags $$COMMIT_REVISION_TAG=100 --region $$GOOGLE_CLOUD_REGION --project $$GOOGLE_CLOUD_PROJECT
+        gcloud run services update-traffic judge --to-tags $$COMMIT_REVISION_TAG=100 --region $$GOOGLE_CLOUD_REGION --project $$GOOGLE_CLOUD_PROJECT
+        gcloud run services update-traffic content-builder --to-tags $$COMMIT_REVISION_TAG=100 --region $$GOOGLE_CLOUD_REGION --project $$GOOGLE_CLOUD_PROJECT
+        gcloud run services update-traffic orchestrator --to-tags $$COMMIT_REVISION_TAG=100 --region $$GOOGLE_CLOUD_REGION --project $$GOOGLE_CLOUD_PROJECT
+        gcloud run services update-traffic course-creator --to-tags $$COMMIT_REVISION_TAG=100 --region $$GOOGLE_CLOUD_REGION --project $$GOOGLE_CLOUD_PROJECT
+
+options:
+  substitutionOption: 'ALLOW_LOOSE'
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

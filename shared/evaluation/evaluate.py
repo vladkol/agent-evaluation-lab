@@ -106,7 +106,14 @@ async def evaluate_agent(
     client = Client( # type: ignore
         project=project_id,
         location=location,
-        http_options=genai_types.HttpOptions(api_version="v1beta1"),
+        http_options=genai_types.HttpOptions(
+            api_version="v1beta1",
+            retry_options=genai_types.HttpRetryOptions(
+                attempts=8,
+                initial_delay=2,
+                max_delay=130,
+            ),
+        ),
     )
 
     print(f"Starting agent evaluation for `{agent_name}` at {agent_api_server}.")
@@ -215,11 +222,14 @@ async def evaluate_agent(
             experiment_subfolder = f"/{experiment_name}/{run_name}/"
         else:
             experiment_subfolder = "/"
+
+        # Running Evaluation
         evaluation_run = client.evals.evaluate(
             dataset=agent_dataset_with_inference,
             agent_info = agent_info,
-            metrics=metrics,
+            metrics=metrics
         )
+
         summary_metrics = {
             m.metric_name : {
                 "mean": m.mean_score or 0.0,

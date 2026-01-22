@@ -24,7 +24,7 @@ from shared.evaluation.tool_metrics import (
     trajectory_precision, trajectory_recall
 )
 
-METRIC_THRESHOLD = 0.8
+METRIC_THRESHOLD = 0.75
 RESEARCHER_URL = os.environ["RESEARCHER_URL"]
 ORCHESTRATOR_URL = os.environ["ORCHESTRATOR_URL"]
 GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]

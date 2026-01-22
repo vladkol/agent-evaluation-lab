@@ -135,6 +135,25 @@ Once you are happy with the evaluation results:
 
 (Without flags, this deploys to the `latest` revision and routes 100% traffic to it).
 
+## Continous Integration and Deployment (CI/CD)
+
+In a production system, the agent evaluation should be run as part of the CI/CD pipeline. [Cloud Build](https://cloud.google.com/build/docs) is a good choice for that.
+
+[.cloudbuild/cloudbuild.yaml](./.cloudbuild/cloudbuild.yaml) is a example ofCloud Build configuration file that defines the following steps:
+
+1.  Deploy the code to Cloud Run as a new revision with a tag made of a commit hash.
+2.  Run the evaluation (and probably your unit tests before that).
+3.  If the tests or the evaluation fail, the deployment will stop here.
+4.  If the tests and the evaluation pass, it will continue with promoting the revisions to serve 100% of traffic.
+
+[.cloudbuild/run_cloud_build.sh](./.cloudbuild/run_cloud_build.sh) is a example of a script that invokes the Cloud Build pipeline.
+It also shows how to create a Service Account with the necessary permissions to run the pipeline.
+
+In a real system, you would want to create a [Cloud Build Trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers) that runs the pipeline when a new commit is pushed to the repository. In that case, `SHORT_SHA` substitution variable will be automatically set to the commit hash of the new commit, and `cloudbuild.yaml` handles that.
+
 ## Links
+*   [Cloud Run](https://docs.cloud.google.com/run/docs)
+*   [Agent Development Kit](https://google.github.io/adk-docs/)
+*   [Agent2Agent Protocol (A2A)](https://a2a-protocol.org/)
 *   [Vertex AI Evaluation Documentation](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview)
 *   [Google Cloud Run Revisions and Gradual Rolloout](https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration)
