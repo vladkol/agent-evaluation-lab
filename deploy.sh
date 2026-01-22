@@ -149,6 +149,7 @@ gcloud services enable \
     cloudtrace.googleapis.com \
     --project="${GOOGLE_CLOUD_PROJECT}"
 
+echo "Checking on existing deployments..."
 # If not redeployment needed, get current URLs.
 if [[ "${NO_REDEPLOY}" == "true" ]]; then
     export RESEARCHER_URL=$(get_service_url "researcher" $REVISION_TAG 2>/dev/null || echo "")
