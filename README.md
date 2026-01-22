@@ -152,6 +152,11 @@ In a production system, the agent evaluation should be run as part of the CI/CD 
 [.cloudbuild/run_cloud_build.sh](./.cloudbuild/run_cloud_build.sh) is a example of a script that invokes the Cloud Build pipeline.
 It also shows how to create a Service Account with the necessary permissions to run the pipeline.
 
+> You need to enable Cloud Build API for the project to use it.
+> ```shell
+> gcloud services enable cloudbuild.googleapis.com
+> ```
+
 In a real system, you would want to create a [Cloud Build Trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that runs the pipeline when a new commit is pushed to the repository. In that case, `SHORT_SHA` substitution variable will be automatically set to the commit hash of the new commit, and `cloudbuild.yaml` handles that.
 
 ## Links
