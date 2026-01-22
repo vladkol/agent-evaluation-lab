@@ -124,12 +124,12 @@ Instead of testing manually, run the full suite:
 ### 3. Analyze Results
 If the evaluation fails or you want to see details:
 1.  Open [`evaluator/show_evaluation_run.ipynb` in Google Colab](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run.ipynb).
-2. Set `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` environment variables.
+2. Set `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` variables.
 3.  Set the `EXPERIMENT_NAME` to match one of 2 runs (`agent-evaluation-researcher` or `agent-evaluation-orchestrator`).
     > You can also address a specific experiment run by setting the `RUN_NAME`.
 4.  Visualize the traces and metric breakdowns to debug.
 
-### 4. Deploy to "Production"
+### 4. Deploying Services to "Production"
 Once you are happy with the evaluation results:
 
 ```bash
