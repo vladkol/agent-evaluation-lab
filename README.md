@@ -1,8 +1,10 @@
 # Evaluation of Multi-Agent Systems
 
-This project implements a **Continuous Evaluation Pipeline** for a multi-agent system built with Google's Agent Development Kit (ADK) and Agent-to-Agent (A2A) protocol. It features a team of microservice agents that research, judge, and build content, orchestrated to deliver high-quality results.
+This project implements a **Continuous Evaluation Pipeline** for a multi-agent system built with Google Agent Development Kit (ADK) and Agent-to-Agent (A2A) protocol on [Cloud Run](https://docs.cloud.google.com/run/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog). It features a team of microservice agents that research, judge, and build content, orchestrated to deliver high-quality results.
 
 The goal of this project is to demonstrate **Agentic Engineering** practices: safely deploying agents to shadow revisions, running automated evaluation suites using Vertex AI, and making data-driven decisions on agent improvements.
+
+[Vertex AIGen AI evaluation service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
 
 ## Architecture
 
@@ -121,10 +123,11 @@ Instead of testing manually, run the full suite:
 
 ### 3. Analyze Results
 If the evaluation fails or you want to see details:
-1.  Open `evaluator/show_evaluation_run.ipynb`.
-2.  Set the `EXPERIMENT_NAME` to match one of 2 runs (`agent-evaluation-researcher` or `agent-evaluation-orchestrator`).
+1.  Open [`evaluator/show_evaluation_run.ipynb` in Google Colab](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run.ipynb).
+2. Set `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` environment variables.
+3.  Set the `EXPERIMENT_NAME` to match one of 2 runs (`agent-evaluation-researcher` or `agent-evaluation-orchestrator`).
     > You can also address a specific experiment run by setting the `RUN_NAME`.
-3.  Visualize the traces and metric breakdowns to debug.
+4.  Visualize the traces and metric breakdowns to debug.
 
 ### 4. Deploy to "Production"
 Once you are happy with the evaluation results:
@@ -137,7 +140,7 @@ Once you are happy with the evaluation results:
 
 ## Continous Integration and Deployment (CI/CD)
 
-In a production system, the agent evaluation should be run as part of the CI/CD pipeline. [Cloud Build](https://cloud.google.com/build/docs) is a good choice for that.
+In a production system, the agent evaluation should be run as part of the CI/CD pipeline. [Cloud Build](https://cloud.google.com/build/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) is a good choice for that.
 
 [.cloudbuild/cloudbuild.yaml](./.cloudbuild/cloudbuild.yaml) is a example ofCloud Build configuration file that defines the following steps:
 
@@ -149,11 +152,11 @@ In a production system, the agent evaluation should be run as part of the CI/CD 
 [.cloudbuild/run_cloud_build.sh](./.cloudbuild/run_cloud_build.sh) is a example of a script that invokes the Cloud Build pipeline.
 It also shows how to create a Service Account with the necessary permissions to run the pipeline.
 
-In a real system, you would want to create a [Cloud Build Trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers) that runs the pipeline when a new commit is pushed to the repository. In that case, `SHORT_SHA` substitution variable will be automatically set to the commit hash of the new commit, and `cloudbuild.yaml` handles that.
+In a real system, you would want to create a [Cloud Build Trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that runs the pipeline when a new commit is pushed to the repository. In that case, `SHORT_SHA` substitution variable will be automatically set to the commit hash of the new commit, and `cloudbuild.yaml` handles that.
 
 ## Links
-*   [Cloud Run](https://docs.cloud.google.com/run/docs)
+*   [Cloud Run](https://docs.cloud.google.com/run/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
 *   [Agent Development Kit](https://google.github.io/adk-docs/)
 *   [Agent2Agent Protocol (A2A)](https://a2a-protocol.org/)
-*   [Vertex AI Evaluation Documentation](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview)
-*   [Google Cloud Run Revisions and Gradual Rolloout](https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration)
+*   [Vertex AI Evaluation Documentation](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
+*   [Google Cloud Run Revisions and Gradual Rolloout](https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
