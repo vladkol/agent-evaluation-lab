@@ -152,7 +152,7 @@ In a production system, the agent evaluation should be run as part of the CI/CD 
 [.cloudbuild/run_cloud_build.sh](./.cloudbuild/run_cloud_build.sh) is a example of a script that invokes the Cloud Build pipeline.
 It also shows how to create a Service Account with the necessary permissions to run the pipeline.
 
-> You need to enable Cloud Build API for the project to use it.
+> You may need to enable Cloud Build API for the project to use it.
 > ```shell
 > gcloud services enable cloudbuild.googleapis.com
 > ```
