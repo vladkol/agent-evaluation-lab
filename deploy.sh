@@ -44,7 +44,7 @@ fi
 # GOOGLE_CLOUD_REGION is the region where Cloud Run services will be deployed.
 # GOOGLE_CLOUD_LOCATION is a cloud location used for Gemini API calls, it may be a region, and may be "global".
 # If GOOGLE_CLOUD_REGION is not defined, it will be the same as GOOGLE_CLOUD_LOCATION unless GOOGLE_CLOUD_LOCATION is "global".
-# In that case, the region will be assigned to the default compute region configured with gcloud CLI.
+# In that case, the region will be assigned to the default Cloud Run region configured with gcloud CLI.
 # If none is configured, "us-central1" is the default value.
 if [[ "${GOOGLE_CLOUD_REGION}" == "" ]]; then
     GOOGLE_CLOUD_REGION="${GOOGLE_CLOUD_LOCATION}"
@@ -54,10 +54,10 @@ if [[ "${GOOGLE_CLOUD_REGION}" == "global" ]]; then
     GOOGLE_CLOUD_REGION=""
 fi
 if [[ "${GOOGLE_CLOUD_REGION}" == "" ]]; then
-    GOOGLE_CLOUD_REGION=$(gcloud config get-value compute/region -q)
+    GOOGLE_CLOUD_REGION=$(gcloud config get-value run/region -q)
     if [[ "${GOOGLE_CLOUD_REGION}" == "" ]]; then
         GOOGLE_CLOUD_REGION="us-central1"
-        echo "WARNING: Cannot get a configured compute region. Defaulting to ${GOOGLE_CLOUD_REGION}."
+        echo "WARNING: Cannot get a configured Cloud Run region. Defaulting to ${GOOGLE_CLOUD_REGION}."
     fi
 fi
 # If GOOGLE_CLOUD_LOCATION is empty, "global" will be used.
@@ -66,7 +66,7 @@ if [[ "${GOOGLE_CLOUD_LOCATION}" == "" ]]; then
 fi
 
 echo "Using project ${GOOGLE_CLOUD_PROJECT}."
-echo "Using compute region ${GOOGLE_CLOUD_REGION}."
+echo "Using Cloud Run region ${GOOGLE_CLOUD_REGION}."
 
 export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}"
 export GOOGLE_CLOUD_LOCATION="${GOOGLE_CLOUD_LOCATION}"
