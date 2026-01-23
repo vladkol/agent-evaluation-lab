@@ -15,20 +15,26 @@
 import asyncio
 import json
 import os
-import time
 
 from vertexai import types # type: ignore
 
-from shared.evaluation.evaluate import evaluate_agent
-from shared.evaluation.tool_metrics import (
-    trajectory_precision, trajectory_recall
+from dotenv import load_dotenv
+
+from shared.evaluation.evaluate import (
+    evaluate_agent,
+    get_custom_function_metric
 )
+from shared.evaluation.tool_metrics import (
+    trajectory_precision_func, trajectory_recall_func
+)
+
+load_dotenv()
 
 METRIC_THRESHOLD = 0.75
 RESEARCHER_URL = os.environ["RESEARCHER_URL"]
 ORCHESTRATOR_URL = os.environ["ORCHESTRATOR_URL"]
 GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
-COMMIT_REVISION_TAG = os.getenv("COMMIT_REVISION_TAG", "latest")
+GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
 
 if __name__ == "__main__":
     eval_data_researcher = os.path.dirname(__file__) + "/eval_data_researcher.json"
@@ -36,8 +42,8 @@ if __name__ == "__main__":
         types.RubricMetric.FINAL_RESPONSE_MATCH,
         types.RubricMetric.FINAL_RESPONSE_QUALITY,
         types.RubricMetric.TOOL_USE_QUALITY,
-        trajectory_precision,
-        trajectory_recall
+        get_custom_function_metric("trajectory_precision", trajectory_precision_func),
+        get_custom_function_metric("trajectory_recall", trajectory_recall_func)
     ]
     eval_results = asyncio.run(evaluate_agent(
         agent_api_server=RESEARCHER_URL,
@@ -45,12 +51,13 @@ if __name__ == "__main__":
         evaluation_data_file=eval_data_researcher,
         evaluation_storage_uri=f"gs://{GOOGLE_CLOUD_PROJECT}-agents/evaluation",
         metrics=metrics,
-        experiment_name="agent-evaluation-researcher",
-        run_name=f"{COMMIT_REVISION_TAG}--{int(time.time())}",
+        project_id=GOOGLE_CLOUD_PROJECT,
+        location=GOOGLE_CLOUD_REGION,
     ))
     researcher_eval_failed = False
     print(f"\n🧪 Researcher Evaluation results:\n{json.dumps(eval_results, indent=2)}")
-    for metric_name, metric_values in eval_results.items():
+    print(f"Evaluation Run ID: {eval_results.run_id}")
+    for metric_name, metric_values in eval_results.metrics.items():
         if metric_values["mean"] < METRIC_THRESHOLD:
             print(f"🛑 Researcher Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
             researcher_eval_failed = True
@@ -68,12 +75,13 @@ if __name__ == "__main__":
         evaluation_data_file=eval_data_orchestrator,
         evaluation_storage_uri=f"gs://{GOOGLE_CLOUD_PROJECT}-agents/evaluation",
         metrics=metrics,
-        experiment_name="agent-evaluation-orchestrator",
-        run_name=f"{COMMIT_REVISION_TAG}--{int(time.time())}",
+        project_id=GOOGLE_CLOUD_PROJECT,
+        location=GOOGLE_CLOUD_REGION,
     ))
     orchestrator_eval_failed = False
     print(f"\n🧪 Orchestrator Evaluation results:\n{json.dumps(eval_results, indent=2)}")
-    for metric_name, metric_values in eval_results.items():
+    print(f"Evaluation Run ID: {eval_results.run_id}")
+    for metric_name, metric_values in eval_results.metrics.items():
         if metric_values["mean"] < METRIC_THRESHOLD:
             print(f"🛑 Orchestrator Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
             orchestrator_eval_failed = True

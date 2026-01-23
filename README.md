@@ -64,8 +64,7 @@ The core evaluation logic is decoupled from the specific agent tests and lives i
 *   **`evaluate.py`**: The Evaluation Engine.
     *   **Parallel Inference**: Runs the evaluation dataset against the agent API in parallel `asyncio`.
     *   **Data Management**: Uploads both the inference results/traces and the original dataset to GCS.
-    *   **Vertex Integration**: Trigger the Vertex Gen AI Evaluation Service to calculate metrics (both Rubric and Custom).
-    *   **Experiment Tracking**: Logs all results, parameters, and summary metrics to Vertex AI Experiments.
+    *   **Vertex Integration**: Trigger a Vertex Gen AI Evaluation Service Run to calculate metrics (both Rubric and Custom).
 *   **`tool_metrics.py`**: Custom Metric Definitions.
     *   Implements **Trajectory** metrics that usually require custom logic not found in standard LLM evaluators.
     *   `trajectory_exact_match`: Did the agent call the exact sequence of tools?
@@ -124,10 +123,8 @@ Instead of testing manually, run the full suite:
 ### 3. Analyze Results
 If the evaluation fails or you want to see details:
 1.  Open [`evaluator/show_evaluation_run.ipynb` in Google Colab](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run.ipynb).
-2. Set `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION` variables.
-3.  Set the `EXPERIMENT_NAME` to match one of 2 runs (`agent-evaluation-researcher` or `agent-evaluation-orchestrator`).
-    > You can also address a specific experiment run by setting the `RUN_NAME`.
-4.  Visualize the traces and metric breakdowns to debug.
+2. Set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`, `EVAL_RUN_ID` variables.
+3.  Visualize the traces and metric breakdowns to debug.
 
 ### 4. Deploying Services to "Production"
 Once you are happy with the evaluation results:

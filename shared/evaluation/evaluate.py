@@ -24,17 +24,11 @@ import json
 from pathlib import Path
 import os
 import sys
-import tempfile
-from typing import Any, Dict,List, Optional
-
-from dotenv import load_dotenv
+from typing import Any, Dict,List, Callable
 
 from httpx import AsyncClient, Limits, HTTPStatusError
 from httpx_sse import aconnect_sse
 
-from google.api_core.exceptions import AlreadyExists
-from google.cloud import aiplatform
-from google.cloud.aiplatform_v1.types import execution
 from google.cloud.exceptions import Conflict
 from google.cloud.storage import Blob, Client as StorageClient
 from google.genai import types as genai_types
@@ -50,7 +44,20 @@ from authenticated_httpx import create_authenticated_client # type: ignore
 MAX_AGENT_REQUESTS = 10
 REQUEST_TIMEOUT = 300.0
 USER_ID = "evaluation_user"
-DEFAULT_REGION = "us-central1"
+
+class AgentEvaluationRunResults:
+    def __init__(
+        self,
+        run_id: str,
+        run_name: str,
+        state: types.EvaluationRunState = types.EvaluationRunState.PENDING,
+        metrics: Dict[str, Dict[str, float]] = {}
+    ):
+        self.run_id = run_id
+        self.run_name = run_name
+        self.state = state
+        self.metrics = metrics
+
 
 async def evaluate_agent(
     agent_api_server: str,
@@ -58,9 +65,9 @@ async def evaluate_agent(
     evaluation_data_file: str,
     evaluation_storage_uri: str,
     metrics: List[types.Metric],
-    experiment_name: Optional[str] = None,
-    run_name: Optional[str] = None,
-) -> Dict[str, Dict[str, float]]:
+    project_id: str,
+    location: str,
+) -> AgentEvaluationRunResults:
     """
     Evaluates an agent against a given dataset.
 
@@ -69,7 +76,6 @@ async def evaluate_agent(
     2.  Runs parallel inference against the agent API.
     3.  Uploads the inference results and original data to GCS.
     4.  Runs Vertex AI Evaluation using the provided metrics.
-    5.  Logs results to Vertex AI Experiment (if configured).
 
     Args:
         agent_api_server: Base URL of the agent's API server.
@@ -77,31 +83,16 @@ async def evaluate_agent(
         evaluation_data_file: Path or URI to the evaluation dataset (JSON, JSONL, CSV, Parquet).
         evaluation_storage_uri: GCS URI for storing evaluation artifacts.
         metrics: List of Vertex AI metrics to calculate.
-        experiment_name: Optional name of the Vertex AI experiment to log to.
-        run_name: Optional name of the Vertex AI run to log to.
+        project_id: Google Cloud project ID.
+        location: Google Cloud location.
 
     Returns:
-        A dictionary mapping metric names to their mean and standard deviation scores (as "mean" and "stdev" keys).
+        AgentEvaluationRunResults - results of the evaluation run.
     """
-    # Load environment variables and set up project/location
-
-    load_dotenv()
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-    location = os.getenv(
-        "GOOGLE_CLOUD_REGION",
-        os.getenv("GOOGLE_CLOUD_LOCATION", DEFAULT_REGION)
-    )
-    if location == "global":
-        location = DEFAULT_REGION
-    if not project_id:
-        raise ValueError("Project ID not found. Please set GOOGLE_CLOUD_PROJECT environment variable.")
-    if not location:
-        raise ValueError("Location not found. Please set GOOGLE_CLOUD_REGION or GOOGLE_CLOUD_LOCATION environment variable.")
+    # Initialize Vertex AI client
     init(
         project=project_id,
         location=location,
-        experiment=experiment_name,
-        experiment_description="Agent Evaluation"
     )
     client = Client( # type: ignore
         project=project_id,
@@ -193,79 +184,88 @@ async def evaluate_agent(
         eval_data_df
     )
 
-    # Upload the dataset with inference results to GCS
-    time_str = str(pd.Timestamp.now().value)
-    eval_data_gcs_data_location = f"{evaluation_storage_uri}/evaluation_dataset/{time_str}.jsonl"
-    with tempfile.NamedTemporaryFile(delete=True) as tmp_file:
-        eval_df_with_inference.to_json(tmp_file, orient="records", lines=True)
-        tmp_file.flush()
-        Blob.from_uri(
-            eval_data_gcs_data_location,
-            client=storage_client
-        ).upload_from_filename(
-            filename=tmp_file.name,
-            client=storage_client,
-            content_type="application/json"
-        )
+    # Initialize Evaluation Dataset with Agent responses
     agent_dataset_with_inference = types.EvaluationDataset(
-        gcs_source = types.GcsSource(uris=[eval_data_gcs_data_location])
+        eval_dataset_df = eval_df_with_inference,
     )
 
     # Run Vertex AI Evaluation
-    run = None
-    try:
-        if experiment_name and run_name:
-            try:
-                run = aiplatform.start_run(run=run_name)
-            except AlreadyExists:
-                run = aiplatform.start_run(run=run_name, resume=True)
-            experiment_subfolder = f"/{experiment_name}/{run_name}/"
-        else:
-            experiment_subfolder = "/"
+    evaluation_run = client.evals.create_evaluation_run(
+        dataset=agent_dataset_with_inference,
+        agent_info = agent_info,
+        metrics=metrics,
+        dest=evaluation_storage_uri
+    )
 
-        # Running Evaluation
-        evaluation_run = client.evals.evaluate(
-            dataset=agent_dataset_with_inference,
-            agent_info = agent_info,
-            metrics=metrics
-        )
-
-        summary_metrics = {
+    completed_states = set(
+        [
+            types.EvaluationRunState.SUCCEEDED,
+            types.EvaluationRunState.FAILED,
+            types.EvaluationRunState.CANCELLED,
+        ]
+    )
+    while evaluation_run.state not in completed_states:
+        print(f"Evaluation {evaluation_run.name} run is {evaluation_run.state}")
+        evaluation_run = client.evals.get_evaluation_run(name=evaluation_run.name)
+        await asyncio.sleep(5)
+    evaluation_run = client.evals.get_evaluation_run(
+        name=evaluation_run.name, include_evaluation_items=True
+    )
+    run_results = AgentEvaluationRunResults(
+        run_id=evaluation_run.name,
+        run_name=evaluation_run.name.rsplit("/", 1)[-1]
+    )
+    print(f"Evaluation run {evaluation_run.name} is {evaluation_run.state}")
+    if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
+        run_results.state = evaluation_run.state
+        run_results.metrics = {
+            m.metric_name : {
+                "mean": 0.0,
+                "stdev": 0.0
+            }
+            for m in metrics
+        }
+    else:
+        eval_results = evaluation_run.evaluation_item_results
+        run_results.state = evaluation_run.state
+        run_results.metrics = {
             m.metric_name : {
                 "mean": m.mean_score or 0.0,
                 "stdev": m.stdev_score or 0.0
             }
-            for m in evaluation_run.summary_metrics
+            for m in eval_results.summary_metrics
         }
-        json_data = evaluation_run.model_dump_json(indent=2, exclude_none=True)
-        eval_result_dest = f"{evaluation_storage_uri}/evaluation_results{experiment_subfolder}eval_results.json"
-        Blob.from_uri(eval_result_dest, client=storage_client).upload_from_string(
-            data=json_data,
-            client=storage_client,
-            content_type="application/json"
+    return run_results
+
+
+def get_custom_function_metric(
+    metric_name: str,
+    metrics_function: Callable
+) -> types.EvaluationRunMetric:
+    """
+    Creates a custom function metric for Vertex AI Evaluation.
+
+    Args:
+        metric_name: Name of the metric.
+        metrics_function: Function to evaluate the metric.
+
+    Returns:
+        EvaluationRunMetric for the custom function metric.
+    """
+    import inspect
+    module_source = inspect.getsource(
+        inspect.getmodule(metrics_function) # type: ignore
+    )
+    module_source += ("\n\ndef evaluate(instance: dict) -> float:\n"
+    f"    return {metrics_function.__name__}(instance)\n")
+    return types.EvaluationRunMetric(
+        metric=metric_name,
+        metric_config=types.UnifiedMetric(
+            custom_code_execution_spec=types.CustomCodeExecutionSpec(
+                remote_custom_function=module_source
+            )
         )
-        metrics_to_log = {}
-        for metric_name, metric_value in summary_metrics.items():
-            metrics_to_log[f"{metric_name}/mean"] = metric_value["mean"] or 0.0
-            metrics_to_log[f"{metric_name}/stdev"] = metric_value["stdev"] or 0.0
-        if run:
-            run.log_metrics(metrics_to_log)
-            run.log_params({
-                "evaluation_results": eval_result_dest,
-                "evaluation_data": eval_data_gcs_data_location
-            })
-            run_id = run.resource_id.rsplit("/", 1)[-1]
-            console_url = f"https://console.cloud.google.com/vertex-ai/experiments/locations/{location}/experiments/{experiment_name}/runs/{run_id}/metrics?project={project_id}"
-            print(f"Evaluation run: {console_url}")
-        return summary_metrics
-    except:
-        if run:
-            run = None
-            aiplatform.end_run(execution.Execution.State.FAILED)
-        raise
-    finally:
-        if run:
-            aiplatform.end_run(execution.Execution.State.COMPLETE)
+    )
 
 
 async def _create_session(
