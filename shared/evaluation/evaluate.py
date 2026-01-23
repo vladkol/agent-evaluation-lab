@@ -40,6 +40,8 @@ from vertexai import init, types, Client # type: ignore
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from authenticated_httpx import create_authenticated_client # type: ignore
 
+import warnings
+warnings.filterwarnings("ignore", category=Warning, message=".*is experimental.*")
 
 MAX_AGENT_REQUESTS = 10
 REQUEST_TIMEOUT = 300.0
@@ -48,15 +50,21 @@ USER_ID = "evaluation_user"
 class AgentEvaluationRunResults:
     def __init__(
         self,
+        run_resource_id: str,
         run_id: str,
-        run_name: str,
         state: types.EvaluationRunState = types.EvaluationRunState.PENDING,
         metrics: Dict[str, Dict[str, float]] = {}
     ):
+        self.run_resource_id = run_resource_id
         self.run_id = run_id
-        self.run_name = run_name
         self.state = state
         self.metrics = metrics
+
+    def __str__(self):
+        return (f"Run ID: {self.run_id}\n"
+            f"Run Resource ID: {self.run_resource_id}\n"
+            f"State: {self.state}\n"
+            f"Metrics: {json.dumps(self.metrics, indent=2)}")
 
 
 async def evaluate_agent(
@@ -212,8 +220,8 @@ async def evaluate_agent(
         name=evaluation_run.name, include_evaluation_items=True
     )
     run_results = AgentEvaluationRunResults(
-        run_id=evaluation_run.name,
-        run_name=evaluation_run.name.rsplit("/", 1)[-1]
+        run_id=evaluation_run.name.rsplit("/", 1)[-1],
+        run_resource_id=evaluation_run.name
     )
     print(f"Evaluation run {evaluation_run.name} is {evaluation_run.state}")
     if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:

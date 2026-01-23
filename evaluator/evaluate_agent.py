@@ -55,7 +55,7 @@ if __name__ == "__main__":
         location=GOOGLE_CLOUD_REGION,
     ))
     researcher_eval_failed = False
-    print(f"\n🧪 Researcher Evaluation results:\n{json.dumps(eval_results, indent=2)}")
+    print(f"\n🧪 Researcher Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
     for metric_name, metric_values in eval_results.metrics.items():
         if metric_values["mean"] < METRIC_THRESHOLD:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         location=GOOGLE_CLOUD_REGION,
     ))
     orchestrator_eval_failed = False
-    print(f"\n🧪 Orchestrator Evaluation results:\n{json.dumps(eval_results, indent=2)}")
+    print(f"\n🧪 Orchestrator Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
     for metric_name, metric_values in eval_results.metrics.items():
         if metric_values["mean"] < METRIC_THRESHOLD:
