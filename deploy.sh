@@ -131,7 +131,8 @@ deploy_service() {
         --no-allow-unauthenticated $ADD_PARAMS \
         --set-env-vars GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}" \
         --set-env-vars GOOGLE_CLOUD_LOCATION="${GOOGLE_CLOUD_LOCATION}" \
-        --set-env-vars GOOGLE_GENAI_USE_VERTEXAI="true"
+        --set-env-vars GOOGLE_GENAI_USE_VERTEXAI="true" \
+        --labels=prod-ready-tutorial=evaluation
 }
 
 ################## Main Script ##################
