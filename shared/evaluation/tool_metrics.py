@@ -16,8 +16,6 @@
 import json
 from typing import Any, Dict, List, Tuple
 
-from vertexai import types # type: ignore
-
 
 def _get_tool_calls(instance: dict) -> Tuple[
     List[Dict[str, Any]], List[Dict[str, Any]]
@@ -84,7 +82,7 @@ def _get_tool_match(
         return False
 
 
-def trajectory_exact_match_func(instance: dict) -> dict:
+def trajectory_exact_match_func(instance: dict) -> float:
     """Calculates the exact match score for tool trajectory.
 
     Requires precise match of tool calls in the exact order.
@@ -93,7 +91,7 @@ def trajectory_exact_match_func(instance: dict) -> dict:
         instance: The instance dictionary.
 
     Returns:
-        A dictionary containing the score (1.0 for exact match, 0.0 otherwise).
+        The score (1.0 for exact match, 0.0 otherwise).
     """
     score = 1.0
     reference_tool_calls, tool_calls = _get_tool_calls(instance)
@@ -114,14 +112,10 @@ def trajectory_exact_match_func(instance: dict) -> dict:
                 ref_tool_call_args
             ):
                 score = 0.0
-    return {"score": score}
+    return score
 
-trajectory_exact_match_metric = types.Metric(
-    name="trajectory_exact_match",
-    custom_function=trajectory_exact_match_func
-)
 
-def trajectory_in_order_match_func(instance: dict) -> dict:
+def trajectory_in_order_match_func(instance: dict) -> float:
     """Calculates the in-order match score for tool trajectory.
 
     Checks if predicted tool calls match reference tool calls in the correct relative order,
@@ -131,7 +125,7 @@ def trajectory_in_order_match_func(instance: dict) -> dict:
         instance: The instance dictionary.
 
     Returns:
-        A dictionary containing the score (1.0 for match, 0.0 otherwise).
+        The score (1.0 for exact match, 0.0 otherwise).
     """
     score = 1.0
     reference_tool_calls, tool_calls = _get_tool_calls(instance)
@@ -156,12 +150,7 @@ def trajectory_in_order_match_func(instance: dict) -> dict:
             ref_tool_call_args
         ):
             score = 0.0
-    return {"score": score}
-
-trajectory_in_order_match = types.Metric(
-    name="trajectory_in_order_match",
-    custom_function=trajectory_in_order_match_func
-)
+    return score
 
 
 def _get_matches_count(
@@ -201,7 +190,7 @@ def _get_matches_count(
     return matches
 
 
-def trajectory_any_order_match_func(instance: dict) -> dict:
+def trajectory_any_order_match_func(instance: dict) -> float:
     """Calculates the any-order match score.
 
     Checks if the set of predicted tool calls exactly matches the set of reference tool calls,
@@ -211,7 +200,7 @@ def trajectory_any_order_match_func(instance: dict) -> dict:
         instance: The instance dictionary.
 
     Returns:
-        A dictionary containing the score (1.0 if lists contain same elements, 0.0 otherwise).
+        The score (1.0 for exact match, 0.0 otherwise).
     """
     reference_tool_calls, tool_calls = _get_tool_calls(instance)
     score = 0.0
@@ -219,16 +208,10 @@ def trajectory_any_order_match_func(instance: dict) -> dict:
         matches = _get_matches_count(tool_calls, reference_tool_calls)
         if matches == len(reference_tool_calls):
             score = 1.0
-    return {"score": score}
+    return score
 
 
-trajectory_any_order_match = types.Metric(
-    name="trajectory_any_order_match",
-    custom_function=trajectory_any_order_match_func
-)
-
-
-def trajectory_precision_func(instance: dict) -> dict:
+def trajectory_precision_func(instance: dict) -> float:
     """Calculates the precision of predicted tool calls.
 
     Precision = (Number of matches) / (Total predicted calls).
@@ -237,26 +220,20 @@ def trajectory_precision_func(instance: dict) -> dict:
         instance: The instance dictionary.
 
     Returns:
-        A dictionary containing the precision score.
+        The precision score.
     """
     reference_tool_calls, tool_calls = _get_tool_calls(instance)
     # If no tools were predicted, precision is 0.0 unless reference was also empty
     # If reference is empty and tool_calls is empty -> 1.0
     if not tool_calls:
-        return {"score": 1.0 if not reference_tool_calls else 0.0}
+        return 1.0 if not reference_tool_calls else 0.0
 
     matches = _get_matches_count(tool_calls, reference_tool_calls)
     score = matches / len(tool_calls)
-    return {"score": score}
+    return score
 
 
-trajectory_precision = types.Metric(
-    name="trajectory_precision",
-    custom_function=trajectory_precision_func
-)
-
-
-def trajectory_recall_func(instance: dict) -> dict:
+def trajectory_recall_func(instance: dict) -> float:
     """Calculates the recall of predicted tool calls.
 
     Recall = (Number of matches) / (Total reference calls).
@@ -265,19 +242,13 @@ def trajectory_recall_func(instance: dict) -> dict:
         instance: The instance dictionary.
 
     Returns:
-        A dictionary containing the recall score.
+        A the recall score.
     """
     reference_tool_calls, tool_calls = _get_tool_calls(instance)
     # If no tools in reference, recall is 1.0 (trivial success)
     if not reference_tool_calls:
-        return {"score": 1.0}
+        return 1.0
 
     matches = _get_matches_count(tool_calls, reference_tool_calls)
     score = matches / len(reference_tool_calls)
-    return {"score": score}
-
-
-trajectory_recall = types.Metric(
-    name="trajectory_recall",
-    custom_function=trajectory_recall_func
-)
+    return score

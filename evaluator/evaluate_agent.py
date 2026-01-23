@@ -15,20 +15,27 @@
 import asyncio
 import json
 import os
-import time
 
 from vertexai import types # type: ignore
 
-from shared.evaluation.evaluate import evaluate_agent
-from shared.evaluation.tool_metrics import (
-    trajectory_precision, trajectory_recall
+from dotenv import load_dotenv
+
+from shared.evaluation.evaluate import (
+    evaluate_agent,
+    get_custom_function_metric
 )
+from shared.evaluation.tool_metrics import (
+    trajectory_precision_func, trajectory_recall_func
+)
+
+load_dotenv()
 
 METRIC_THRESHOLD = 0.75
 RESEARCHER_URL = os.environ["RESEARCHER_URL"]
 ORCHESTRATOR_URL = os.environ["ORCHESTRATOR_URL"]
 GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
-COMMIT_REVISION_TAG = os.getenv("COMMIT_REVISION_TAG", "latest")
+GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
+
 
 if __name__ == "__main__":
     # TODO: implement evaluation

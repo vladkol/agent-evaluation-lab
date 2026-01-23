@@ -1,5 +1,4 @@
 from google.adk.agents import Agent
-from google.adk.tools.google_search_tool import google_search
 
 from wikipedia import search, page
 
