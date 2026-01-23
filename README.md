@@ -6,4 +6,4 @@ This project implements a **Continuous Evaluation Pipeline** for a multi-agent s
 
 The goal of this project is to demonstrate **Agentic Engineering** practices: safely deploying agents to shadow revisions, running automated evaluation suites using Vertex AI, and making data-driven decisions on agent improvements.
 
-[Vertex AIGen AI evaluation service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
+[Vertex AI Gen AI evaluation service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
