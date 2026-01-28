@@ -18,7 +18,7 @@ from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.sdk.trace import TracerProvider, export
 from pydantic import BaseModel
 
-from authenticated_httpx import create_authenticated_client # type: ignore
+from traced_authenticated_httpx import create_traced_authenticated_client # type: ignore
 
 class Feedback(BaseModel):
     score: float
@@ -60,7 +60,7 @@ clients: Dict[str, httpx.AsyncClient] = {}
 async def get_client(agent_server_origin: str) -> httpx.AsyncClient:
     global clients
     if agent_server_origin not in clients:
-        clients[agent_server_origin] = create_authenticated_client(agent_server_origin)
+        clients[agent_server_origin] = create_traced_authenticated_client(agent_server_origin)
     return clients[agent_server_origin]
 
 async def create_session(agent_server_origin: str, agent_name: str, user_id: str) -> Dict[str, Any]:
@@ -206,6 +206,9 @@ async def chat_stream(request: SimpleChatRequest):
 frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
 if os.path.exists(frontend_path):
     app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+app = OpenTelemetryMiddleware(app)
 
 if __name__ == "__main__":
     import uvicorn
