@@ -21,9 +21,25 @@ from google.oauth2.credentials import Credentials
 from google.oauth2.id_token import fetch_id_token_credentials
 import httpx
 
+
 DEFAULT_TIMEOUT = 600.0
 
-def create_authenticated_client(
+async def inject_trace_context(request):
+    """Injects trace context into the request headers."""
+    if not hasattr(inject_trace_context, "propagator"):
+        try:
+            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+            propagator = TraceContextTextMapPropagator()
+        except ImportError:
+            propagator = None # type: ignore
+        setattr(inject_trace_context, "propagator", propagator)
+    else:
+        propagator = getattr(inject_trace_context, "propagator")
+    if propagator:
+        propagator.inject(request.headers)
+
+
+def create_traced_authenticated_client(
         remote_service_url: str,
         timeout: float = DEFAULT_TIMEOUT
     ) -> httpx.AsyncClient:
@@ -106,5 +122,6 @@ def create_authenticated_client(
     return httpx.AsyncClient(
         auth=_IdentityTokenAuth(remote_service_url),
         follow_redirects=True,
+        event_hooks={'request': [inject_trace_context]},
         timeout=timeout,
     )

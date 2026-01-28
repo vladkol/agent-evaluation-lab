@@ -7,7 +7,7 @@ from google.adk.events import Event, EventActions
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.agents.callback_context import CallbackContext
 
-from authenticated_httpx import create_authenticated_client # type: ignore
+from traced_authenticated_httpx import create_traced_authenticated_client # type: ignore
 
 # --- Callbacks ---
 def create_save_output_callback(key: str):
@@ -49,7 +49,7 @@ researcher = RemoteA2aAgent(
     # IMPORTANT: Save the output to state for the Judge to see
     after_agent_callback=create_save_output_callback("research_findings"),
     # IMPORTANT: httpx client with Id Token Authentication
-    httpx_client=create_authenticated_client(researcher_url)
+    httpx_client=create_traced_authenticated_client(researcher_url)
 )
 
 # Connect to the Judge (Localhost port 8002)
@@ -63,7 +63,7 @@ judge = RemoteA2aAgent(
     description="Evaluates research.",
     after_agent_callback=create_save_output_callback("judge_feedback"),
     # IMPORTANT: httpx client with Id Token Authentication
-    httpx_client=create_authenticated_client(judge_url)
+    httpx_client=create_traced_authenticated_client(judge_url)
 )
 
 # Content Builder (Localhost port 8003) - Implementation hidden for this lab
@@ -76,7 +76,7 @@ content_builder = RemoteA2aAgent(
     agent_card=content_builder_url,
     description="Builds the course.",
     # IMPORTANT: httpx client with Id Token Authentication
-    httpx_client=create_authenticated_client(content_builder_url)
+    httpx_client=create_traced_authenticated_client(content_builder_url)
 )
 
 # --- Local Orchestration Agents ---

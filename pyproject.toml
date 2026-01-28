@@ -8,6 +8,7 @@ authors = [
 dependencies = [
     "google-adk==1.22.0",
     "opentelemetry-exporter-gcp-trace==1.11.0",
+    "opentelemetry-instrumentation-asgi",
     "google-cloud-logging==3.13.0",
     "google-cloud-aiplatform[evaluation]==1.133.0",
     "vertexai==1.43.*",

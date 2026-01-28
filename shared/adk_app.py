@@ -324,6 +324,16 @@ def main(
             fd.rmdir()
         except OSError:
             pass
+
+    if trace_to_cloud:
+        try:
+            from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+            app = OpenTelemetryMiddleware(app)
+        except ImportError:
+            print(
+                "ERROR: Missing `opentelemetry-instrumentation-asgi` package."
+            )
+
     config = uvicorn.Config(
         app=app,
         host=host,

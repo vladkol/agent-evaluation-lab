@@ -38,7 +38,7 @@ import pandas as pd
 from vertexai import init, types, Client # type: ignore
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from authenticated_httpx import create_authenticated_client # type: ignore
+from traced_authenticated_httpx import create_traced_authenticated_client # type: ignore
 
 import warnings
 warnings.filterwarnings("ignore", category=Warning, message=".*is experimental.*")
@@ -145,7 +145,7 @@ async def evaluate_agent(
     eval_data_df["session_inputs"] = [session_inputs] * len(eval_data_df)
 
     # Initialize authenticated HTTP client
-    tmp_httpx_client = create_authenticated_client(
+    tmp_httpx_client = create_traced_authenticated_client(
         agent_api_server
     )
     httpx_client = AsyncClient(
