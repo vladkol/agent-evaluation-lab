@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 provider = TracerProvider()
 processor = export.BatchSpanProcessor(
-    CloudTraceSpanExporter(),
+    CloudTraceSpanExporter(project_id=os.getenv("GOOGLE_CLOUD_PROJECT"))
 )
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)

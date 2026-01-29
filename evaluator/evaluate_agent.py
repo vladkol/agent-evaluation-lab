@@ -36,7 +36,6 @@ ORCHESTRATOR_URL = os.environ["ORCHESTRATOR_URL"]
 GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
 
-
 if __name__ == "__main__":
     # TODO: implement evaluation
     pass
