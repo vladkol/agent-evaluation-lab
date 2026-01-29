@@ -116,13 +116,20 @@ deploy_service() {
         SERVING_URL=$(get_service_url $SERVICE_NAME 2>/dev/null || echo "")
         # If no existing serving deployment, we cannot use "--no-traffic"
         if [[ "${SERVING_URL}" != "" ]]; then
-            TAG_PARAMS=" --no-traffic --tag ${REVISION_TAG} --set-env-vars REVISION_TAG=${REVISION_TAG} "
+            TAG_PARAMS=" --no-traffic --tag ${REVISION_TAG_NAME} --set-env-vars REVISION_TAG=${REVISION_TAG_NAME} "
         else
-            TAG_PARAMS=" --tag ${REVISION_TAG} --set-env-vars REVISION_TAG=${REVISION_TAG} "
+            TAG_PARAMS=" --tag ${REVISION_TAG_NAME} --set-env-vars REVISION_TAG=${REVISION_TAG_NAME} "
         fi
+        SWITCH_TO_CURRENT="false"
+    else
+        SWITCH_TO_CURRENT="true"
+        REVISION_TAG_NAME="r-$RANDOM-$RANDOM"
+        TAG_PARAMS=" --tag ${REVISION_TAG_NAME} --set-env-vars REVISION_TAG=${REVISION_TAG_NAME} "
     fi
 
     echo "Deploying ${SERVICE_NAME}..."
+
+
 
     gcloud run deploy $SERVICE_NAME \
         --source "${SOURCE_DIR}" \
@@ -132,7 +139,13 @@ deploy_service() {
         --set-env-vars GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}" \
         --set-env-vars GOOGLE_CLOUD_LOCATION="${GOOGLE_CLOUD_LOCATION}" \
         --set-env-vars GOOGLE_GENAI_USE_VERTEXAI="true" \
+        --set-env-vars OTEL_SERVICE_NAME="${SERVICE_NAME}" \
+        --set-env-vars ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false" \
+        --set-env-vars OTEL_TRACES_SAMPLER="always_on" \
         --labels=prod-ready-tutorial=2-evaluation
+    if [[ "${SWITCH_TO_CURRENT}" == "true" ]]; then
+        gcloud run services update-traffic $SERVICE_NAME --to-tags ${REVISION_TAG_NAME}=100 --project $GOOGLE_CLOUD_PROJECT --region $GOOGLE_CLOUD_REGION
+    fi
 }
 
 ################## Main Script ##################

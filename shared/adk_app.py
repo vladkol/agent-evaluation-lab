@@ -260,6 +260,10 @@ def main(
         extra_plugins=extra_plugins,
     )
 
+    @app.get("/health")
+    def health_check():
+        return {"status": "ok"}
+
     if publish_agent_info:
         from google.adk.apps import App
         from google.adk.cli.utils.agent_loader import AgentLoader
@@ -325,14 +329,41 @@ def main(
         except OSError:
             pass
 
-    if trace_to_cloud:
+    if trace_to_cloud or otel_to_cloud:
         try:
+            from opentelemetry import propagate
             from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+            from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+            from opentelemetry.propagators.textmap import Getter, default_getter
+
+            class OriginalTracePropagator(TraceContextTextMapPropagator):
+                """
+                Custom propagator to extract the original traceparent from the x-original-traceparent header.
+                This is needed because Cloud Run may rewrite the traceparent header.
+                """
+                def extract(self, carrier, context=None, getter: Getter = default_getter):
+                    orig = getter.get(carrier, "x-original-traceparent")
+                    if orig:
+                        # We found the original traceparent.
+                        # We pass a modified carrier (or a fake one) to the parent extractor.
+                        # Usually, orig is a list, so we take the first element if it's there.
+                        val = orig[0] if isinstance(orig, list) else orig
+                        # We trick the standard TraceContext extractor by feeding it our value
+                        return super().extract({"traceparent": val}, context)
+                    # If not found, proceed with standard traceparent extraction
+                    return super().extract(carrier, context, getter=getter)
+
+            # Wrap the app with OpenTelemetryMiddleware to ensure
+            # that the traceparent header is extracted and used for the parent span
             app = OpenTelemetryMiddleware(app)
+
+            # Set this as our global propagator
+            propagate.set_global_textmap(OriginalTracePropagator())
         except ImportError:
             print(
                 "ERROR: Missing `opentelemetry-instrumentation-asgi` package."
             )
+
 
     config = uvicorn.Config(
         app=app,

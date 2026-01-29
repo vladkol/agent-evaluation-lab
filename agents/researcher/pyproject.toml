@@ -9,8 +9,8 @@ dependencies = [
     "fastapi==0.123.*",
     "uvicorn==0.40.0",
     "google-cloud-logging==3.13.0",
-    "opentelemetry-exporter-gcp-trace==1.11.0",
     "opentelemetry-instrumentation-asgi",
+    "opentelemetry-instrumentation-google-genai>=0.3b0, <1.0.0",
     "python-dotenv",
     "wikipedia"
 ]

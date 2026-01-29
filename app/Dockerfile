@@ -25,9 +25,7 @@ RUN uv venv /opt/venv && \
         echo "Neither pyproject.toml nor requirements.txt found" && exit 1; \
     fi
 
-# Set host and port
-ENV HOST 0.0.0.0
-EXPOSE $PORT
+EXPOSE 8080
 
 # Run ADK API Server
-CMD ["python3", "main.py"]
+CMD uv run uvicorn main:app --host 0.0.0.0 --port 8080

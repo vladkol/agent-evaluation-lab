@@ -37,6 +37,9 @@ async def inject_trace_context(request):
         propagator = getattr(inject_trace_context, "propagator")
     if propagator:
         propagator.inject(request.headers)
+        if "traceparent" in request.headers:
+            # Duplicates traceparent to work around Cloud Run rewriting it.
+            request.headers["x-original-traceparent"] = request.headers["traceparent"]
 
 
 def create_traced_authenticated_client(
@@ -122,6 +125,6 @@ def create_traced_authenticated_client(
     return httpx.AsyncClient(
         auth=_IdentityTokenAuth(remote_service_url),
         follow_redirects=True,
-        event_hooks={'request': [inject_trace_context]},
+        event_hooks={"request": [inject_trace_context]},
         timeout=timeout,
     )

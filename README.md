@@ -22,24 +22,24 @@ The system uses a distributed microservices architecture where each agent runs i
 
 ```
 multi-agent-eval/
-├── agents/                  # Source code for the agents
-│   ├── orchestrator/        # Main Orchestrator agent (ADK API Service)
-│   ├── researcher/          # Researcher agent (with Wikipedia Search Tool)
-│   ├── judge/               # Judge agent (Quality Assurance)
-│   └── content_builder/     # Content Builder agent (Writer)
-├── app/                     # Web App service application
-│   └── frontend/            # Frontend application that uses Web App service API
-├── evaluator/               # Evaluation Logic
-│   ├── evaluate_agent.py    # Main script to run Vertex AI evaluations
-│   ├── eval_data_*.json     # Golden Datasets for agents
-│   └── show_run.ipynb       # Notebook to visualize results
-├── shared/                  # Common libraries (symlinked to agents)
-│   ├── evaluation/          # Shared evaluation logic (engine & metrics)
-│   ├── a2a_utils.py         # Utilities for A2A Service-to-Service calls
-│   ├── adk_app.py           # Base ADK application wrapper
-│   └── authenticated_httpx.py # Auth handling for Service-to-Service calls
-├── deploy.sh                # Deployment Automation Script
-└── evaluate.sh              # CI/CD Entry point for Evaluation
+├── agents/                     # Source code for the agents
+│   ├── orchestrator/           # Main Orchestrator agent (ADK API Service)
+│   ├── researcher/             # Researcher agent (with Wikipedia Search Tool)
+│   ├── judge/                  # Judge agent (Quality Assurance)
+│   └── content_builder/        # Content Builder agent (Writer)
+├── app/                        # Web App service application
+│   └── frontend/               # Frontend application that uses Web App service API
+├── evaluator/                  # Evaluation Logic
+│   ├── evaluate_agent.py       # Main script to run Vertex AI evaluations
+│   ├── eval_data_*.json        # Golden Datasets for agents
+│   └── show_run.ipynb          # Notebook to visualize results
+├── shared/                     # Common libraries (symlinked to agents)
+│   ├── evaluation/                    # Shared evaluation logic (engine & metrics)
+│   ├── a2a_utils.py                   # Utilities for A2A Service-to-Service calls
+│   ├── adk_app.py                     # ADK application wrapper
+│   └── traced_authenticated_httpx.py  # Auth handling for Service-to-Service calls
+├── deploy.sh                   # Deployment Automation Script
+└── evaluate.sh                 # CI/CD Entry point for Evaluation
 ```
 
 ## Component Deep Dive
@@ -79,6 +79,18 @@ The `evaluator/` directory contains the specific test definitions for *this* pro
     *   `Final Response Match`: Checks if the Researcher supports the correct answer (Golden Dataset).
     *   `Tool Use Quality`: Validates if tool calls are malformed or unnecessary.
     *   `Hallucination`: Verifies that the Orchestrator's final output is grounded in the retrieved context.
+
+### Agent API Server
+
+Shared `adk_app.py` script is used for all agents. It provides:
+
+*   ADK API Server wrapper
+*   A2A service registration and AgentCard
+*   Robust Cloud Trace integration for end-to-end tracing, including A2A subagents
+    > **Note:** The deployment script (`deploy.sh`) sets the `OTEL_TRACES_SAMPLER` environment variable to `always_on`.
+    In production deployments, to avoid high trace volume, you may want to send it to `parentbased_traceidratio` or other value appropriate for high request rate.
+
+*   Health checks
 
 ## Getting Started
 

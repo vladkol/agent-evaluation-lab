@@ -45,7 +45,7 @@ if [[ "${ADDITIONAL_ADK_PARAMETERS}" != "" ]]; then
 fi
 
 python3 adk_app.py --host "0.0.0.0" --port ${PORT} \
-    --trace_to_cloud \
+    --otel_to_cloud \
     --publish_agent_info \
     ${SESSION_SERVICE_PARAMETER} \
     ${MEMORY_SERVICE_PARAMETER} \

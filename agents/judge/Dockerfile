@@ -33,4 +33,4 @@ ENV HOST 0.0.0.0
 EXPOSE $PORT
 
 # Run ADK API Server
-CMD python3 "${AGENT_NAME}/adk_app.py" --host 0.0.0.0 --trace_to_cloud --publish_agent_info --a2a
+CMD python3 "${AGENT_NAME}/adk_app.py" --host 0.0.0.0 --otel_to_cloud --publish_agent_info --a2a

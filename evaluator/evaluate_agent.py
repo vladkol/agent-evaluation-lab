@@ -37,6 +37,7 @@ GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
 
 if __name__ == "__main__":
+    print(f"\n🧪 Evaluating Researcher")
     eval_data_researcher = os.path.dirname(__file__) + "/eval_data_researcher.json"
     metrics=[
         types.RubricMetric.FINAL_RESPONSE_MATCH,
@@ -64,6 +65,7 @@ if __name__ == "__main__":
     if not researcher_eval_failed:
         print(f"✅ Researcher Evaluation passed.")
 
+    print(f"\n🧪 Evaluating Orchestrator")
     eval_data_orchestrator = os.path.dirname(__file__) + "/eval_data_orchestrator.json"
     metrics=[
         # types.RubricMetric.FINAL_RESPONSE_QUALITY,
