@@ -142,7 +142,7 @@ deploy_service() {
         --set-env-vars OTEL_SERVICE_NAME="${SERVICE_NAME}" \
         --set-env-vars ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS="false" \
         --set-env-vars OTEL_TRACES_SAMPLER="always_on" \
-        --labels=prod-ready-tutorial=2-evaluation
+        --labels dev-tutorial=prod-ready-2
     if [[ "${SWITCH_TO_CURRENT}" == "true" ]]; then
         gcloud run services update-traffic $SERVICE_NAME --to-tags ${REVISION_TAG_NAME}=100 --project $GOOGLE_CLOUD_PROJECT --region $GOOGLE_CLOUD_REGION
     fi
