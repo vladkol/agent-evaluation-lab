@@ -227,7 +227,7 @@ async def evaluate_agent(
     if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
         run_results.state = evaluation_run.state
         run_results.metrics = {
-            m.metric_name : {
+            m.metric_name if hasattr(m, "metric_name") else m.name : {
                 "mean": 0.0,
                 "stdev": 0.0
             }
@@ -237,7 +237,7 @@ async def evaluate_agent(
         eval_results = evaluation_run.evaluation_item_results
         run_results.state = evaluation_run.state
         run_results.metrics = {
-            m.metric_name : {
+            m.metric_name if hasattr(m, "metric_name") else m.name : {
                 "mean": m.mean_score or 0.0,
                 "stdev": m.stdev_score or 0.0
             }

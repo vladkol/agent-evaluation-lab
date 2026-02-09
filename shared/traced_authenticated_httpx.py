@@ -15,6 +15,8 @@
 import subprocess
 from urllib.parse import urlparse
 
+import google.auth
+from google.auth import impersonated_credentials
 from google.auth.transport.requests import AuthorizedSession, Request
 from google.auth.exceptions import DefaultCredentialsError
 from google.oauth2.credentials import Credentials
@@ -41,6 +43,61 @@ async def inject_trace_context(request):
             # Duplicates traceparent to work around Cloud Run rewriting it.
             request.headers["x-original-traceparent"] = request.headers["traceparent"]
 
+def _get_session_with_id_token(audience: str) -> AuthorizedSession:
+    """Returns an authorized session with an ID token for the given audience."""
+    credentials, _ = google.auth.default()
+    if isinstance(
+        credentials,
+        impersonated_credentials.Credentials
+    ):
+        credentials = impersonated_credentials.IDTokenCredentials(
+            credentials,
+            target_audience=audience,
+            include_email=True
+        )
+        credentials.refresh(Request())
+    else:
+        try:
+            credentials = fetch_id_token_credentials(
+                audience,
+                Request()
+            )
+        except (DefaultCredentialsError, TypeError):
+            pass
+    # If still don't have an id token, try fetching it from gcloud CLI.
+    if not hasattr(
+        credentials,
+        "id_token"
+    ) or not credentials.id_token:
+        try:
+            print("Fetching identity token from gcloud CLI.")
+            id_token = subprocess.check_output(
+                [
+                    "gcloud",
+                    "auth",
+                    "print-identity-token",
+                    "-q"
+                ]
+            ).decode().strip()
+            if id_token:
+                refresh_token = subprocess.check_output(
+                    [
+                        "gcloud",
+                        "auth",
+                        "print-refresh-token",
+                        "-q"
+                    ]
+                ).decode().strip()
+                credentials = Credentials(
+                    token=id_token,
+                    id_token=id_token,
+                    refresh_token=refresh_token
+                )
+        except subprocess.SubprocessError:
+            print("ERROR: Unable to fetch identity token from gcloud CLI.")
+    return AuthorizedSession(
+        credentials
+    )
 
 def create_traced_authenticated_client(
         remote_service_url: str,
@@ -75,51 +132,9 @@ def create_traced_authenticated_client(
             if self.session:
                 id_token = self.session.credentials.token
             else:
-                id_token = None
-                try:
-                    credentials = fetch_id_token_credentials(
-                        audience=self.root_url,
-                    )
-                    credentials.refresh(Request())
-                    self.session = AuthorizedSession(
-                        credentials
-                    )
-                    id_token = self.session.credentials.token
-                except DefaultCredentialsError:
-                    self.outside_cloud = True
-                if not id_token:
-                    # Local run, fetching authenticated user's identity token
-                    # from gcloud CLI
-                    try:
-                        id_token = subprocess.check_output(
-                            [
-                                "gcloud",
-                                "auth",
-                                "print-identity-token",
-                                "-q"
-                            ]
-                        ).decode().strip()
-                        if id_token:
-                            refresh_token = subprocess.check_output(
-                                [
-                                    "gcloud",
-                                    "auth",
-                                    "print-refresh-token",
-                                    "-q"
-                                ]
-                            ).decode().strip()
-                            credentials = Credentials(
-                                token=id_token,
-                                id_token=id_token,
-                                refresh_token=refresh_token
-                            )
-                            self.session = AuthorizedSession(
-                                credentials
-                            )
-                    except subprocess.SubprocessError:
-                        print("ERROR: Unable to fetch identity token.")
-            if id_token:
-                request.headers["Authorization"] = f"Bearer {id_token}"
+                self.session = _get_session_with_id_token(self.root_url)
+                id_token = self.session.credentials.token
+            request.headers["Authorization"] = f"Bearer {id_token}"
             yield request
 
     return httpx.AsyncClient(
