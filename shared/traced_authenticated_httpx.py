@@ -79,20 +79,10 @@ def _get_session_with_id_token(audience: str) -> AuthorizedSession:
                     "-q"
                 ]
             ).decode().strip()
-            if id_token:
-                refresh_token = subprocess.check_output(
-                    [
-                        "gcloud",
-                        "auth",
-                        "print-refresh-token",
-                        "-q"
-                    ]
-                ).decode().strip()
-                credentials = Credentials(
-                    token=id_token,
-                    id_token=id_token,
-                    refresh_token=refresh_token
-                )
+            credentials = Credentials(
+                token=id_token,
+                id_token=id_token,
+            )
         except subprocess.SubprocessError:
             print("ERROR: Unable to fetch identity token from gcloud CLI.")
     return AuthorizedSession(
