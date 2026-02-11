@@ -88,7 +88,7 @@ Shared `adk_app.py` script is used for all agents. It provides:
 *   A2A service registration and AgentCard
 *   Robust Cloud Trace integration for end-to-end tracing, including A2A subagents
     > **Note:** The deployment script (`deploy.sh`) sets the `OTEL_TRACES_SAMPLER` environment variable to `always_on`.
-    In production deployments, to avoid high trace volume, you may want to send it to `parentbased_traceidratio` or other value appropriate for high request rate.
+    In production deployments, to avoid high trace volume, you may want to send it to `parentbased_traceidratio` or other value appropriate for high request rate. It also sets the `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS` environment variable to `false` to prevent personally identifiable information (PII) from being attached to tracing spans as attributes.
 
 *   Health checks
 

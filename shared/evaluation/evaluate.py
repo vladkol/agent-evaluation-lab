@@ -151,7 +151,7 @@ async def evaluate_agent(
     httpx_client = AsyncClient(
         auth=tmp_httpx_client.auth,
         timeout=REQUEST_TIMEOUT,
-        limits = Limits(
+        limits=Limits(
             max_connections=MAX_AGENT_REQUESTS * 2,
             max_keepalive_connections=MAX_AGENT_REQUESTS,
             keepalive_expiry=REQUEST_TIMEOUT
@@ -194,13 +194,13 @@ async def evaluate_agent(
 
     # Initialize Evaluation Dataset with Agent responses
     agent_dataset_with_inference = types.EvaluationDataset(
-        eval_dataset_df = eval_df_with_inference,
+        eval_dataset_df=eval_df_with_inference,
     )
 
     # Run Vertex AI Evaluation
     evaluation_run = client.evals.create_evaluation_run(
         dataset=agent_dataset_with_inference,
-        agent_info = agent_info,
+        agent_info=agent_info,
         metrics=metrics,
         dest=evaluation_storage_uri
     )
@@ -217,7 +217,8 @@ async def evaluate_agent(
         evaluation_run = client.evals.get_evaluation_run(name=evaluation_run.name)
         await asyncio.sleep(5)
     evaluation_run = client.evals.get_evaluation_run(
-        name=evaluation_run.name, include_evaluation_items=True
+        name=evaluation_run.name,
+        include_evaluation_items=True
     )
     run_results = AgentEvaluationRunResults(
         run_id=evaluation_run.name.rsplit("/", 1)[-1],
