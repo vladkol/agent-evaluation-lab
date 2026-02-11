@@ -46,15 +46,19 @@ if __name__ == "__main__":
         get_custom_function_metric("trajectory_precision", trajectory_precision_func),
         get_custom_function_metric("trajectory_recall", trajectory_recall_func)
     ]
-    eval_results = asyncio.run(evaluate_agent(
-        agent_api_server=RESEARCHER_URL,
-        agent_name="agent",
-        evaluation_data_file=eval_data_researcher,
-        evaluation_storage_uri=f"gs://{GOOGLE_CLOUD_PROJECT}-agents/evaluation",
-        metrics=metrics,
-        project_id=GOOGLE_CLOUD_PROJECT,
-        location=GOOGLE_CLOUD_REGION,
-    ))
+    eval_results = asyncio.run(
+        # Run the evaluation and retrieve the results.
+        evaluate_agent(
+            agent_api_server=RESEARCHER_URL, # The URL of the agent's API service in Cloud Run.
+            agent_name="agent", # The name of the agent as it is exposed by the API server.
+            evaluation_data_file=eval_data_researcher, # The path to the evaluation data.
+            # The GCS URI for storing evaluation artifacts.
+            evaluation_storage_uri=f"gs://{GOOGLE_CLOUD_PROJECT}-agents/evaluation",
+            metrics=metrics, # The metrics to calculate.
+            project_id=GOOGLE_CLOUD_PROJECT,
+            location=GOOGLE_CLOUD_REGION,
+        )
+    )
     researcher_eval_failed = False
     print(f"\n🧪 Researcher Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
