@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import subprocess
 from urllib.parse import urlparse
@@ -24,6 +25,7 @@ import httpx
 
 
 DEFAULT_TIMEOUT = 600.0
+logger = logging.getLogger(__name__)
 
 async def inject_trace_context(request):
     """Injects trace context into the request headers."""
@@ -109,7 +111,8 @@ def create_traced_authenticated_client(
                                         "auth",
                                         "print-refresh-token",
                                         "-q"
-                                    ]
+                                    ],
+                                    stderr=subprocess.DEVNULL
                                 ).decode().strip()
                             except Exception:
                                 # If can't get refresh token, continue without it
@@ -122,8 +125,8 @@ def create_traced_authenticated_client(
                             self.session = AuthorizedSession(
                                 credentials
                             )
-                    except subprocess.SubprocessError:
-                        print("ERROR: Unable to fetch identity token.")
+                    except (subprocess.SubprocessError, OSError):
+                        logger.error("ERROR: Unable to fetch identity token: {e}")
             if id_token:
                 request.headers["Authorization"] = f"Bearer {id_token}"
             yield request
