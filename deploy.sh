@@ -30,6 +30,16 @@ if [[ "$ENV_FILE" == "" ]]; then
 fi
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
+elif [[ -f "$HOME/$ENV_FILE" ]]; then
+    read -r -p "⚠️ WARNING: $ENV_FILE not found in the project directory. Use '$HOME/$ENV_FILE' instead? [y/N]> " response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        echo "Using '$HOME/$ENV_FILE' file."
+        source "$HOME/$ENV_FILE"
+    else
+        exit 1
+    fi
+else
+    echo "⚠️ WARNING: $ENV_FILE file not found. Using current or default values."
 fi
 
 # If GOOGLE_CLOUD_PROJECT is not defined, get current project from gcloud CLI
@@ -67,6 +77,11 @@ fi
 
 echo "Using project ${GOOGLE_CLOUD_PROJECT}."
 echo "Using Cloud Run region ${GOOGLE_CLOUD_REGION}."
+echo "Using Gemini/ADK location ${GOOGLE_CLOUD_LOCATION}."
+
+if [[ "${GOOGLE_CLOUD_LOCATION}" != "global" ]]; then
+    echo "⚠️ WARNING: Location for Gemini/ADK is not 'global'. This may cause issues with Gemini 3 API calls."
+fi
 
 export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}"
 export GOOGLE_CLOUD_LOCATION="${GOOGLE_CLOUD_LOCATION}"
