@@ -38,7 +38,8 @@ elif [[ -f "$HOME/$ENV_FILE" ]]; then
     else
         exit 1
     fi
-else
+elif [[ "${BUILD_ID}" == "" ]]; then
+    # Warn the user that the .env file is not found, unless we are running in a Cloud Build pipeline.
     echo "⚠️ WARNING: $ENV_FILE file not found. Using current or default values."
 fi
 

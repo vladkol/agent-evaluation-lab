@@ -24,12 +24,13 @@ BUILD_SA_NAME="agent-eval-build-sa"
 BUILD_SA_EMAIL="${BUILD_SA_NAME}@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 COMMIT_SHORT_HASH=$(git rev-parse --short HEAD)
 
-# Creating service account for build, if it doesn't exist
+# Creating service account for Cloud Build. Granting necessary roles to it.
 if ! gcloud iam service-accounts describe "${BUILD_SA_EMAIL}" --project "${GOOGLE_CLOUD_PROJECT}" &> /dev/null; then
     echo "Creating service account ${BUILD_SA_NAME} for Cloud Build."
     gcloud iam service-accounts create ${BUILD_SA_NAME} --project "${GOOGLE_CLOUD_PROJECT}" --display-name "Agent Build Service Account"
 
-    echo "Granting roles to service account ${BUILD_SA_NAME}."
+    echo "Granting roles to service account ${BUILD_SA_NAME}..."
+    sleep 10
     ROLES=(
         "roles/cloudbuild.builds.builder"
         "roles/run.admin"
@@ -39,14 +40,22 @@ if ! gcloud iam service-accounts describe "${BUILD_SA_EMAIL}" --project "${GOOGL
         "roles/serviceusage.serviceUsageAdmin"
         "roles/serviceusage.serviceUsageConsumer"
         "roles/aiplatform.user"
+        "roles/logging.logWriter"
+        "roles/storage.admin"
+        "roles/artifactregistry.writer"
     )
 
     # Loop through and grant each role
     for ROLE in "${ROLES[@]}"; do
         gcloud projects add-iam-policy-binding "$GOOGLE_CLOUD_PROJECT" \
             --member="serviceAccount:$BUILD_SA_EMAIL" \
-            --role="$ROLE"
+            --role="$ROLE" \
+            --condition=None \
+            --quiet
     done
+
+    echo "Waiting for 60 seconds for the permission changes to propagate..."
+    sleep 60
 fi
 
 gcloud builds submit --config .cloudbuild/cloudbuild.yaml \
