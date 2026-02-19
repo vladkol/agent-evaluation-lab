@@ -1,6 +1,8 @@
 steps:
 - name: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
   entrypoint: /bin/bash
+  env:
+      - 'BUILD_ID=$BUILD_ID'
   args:
       - "-c"
       - |

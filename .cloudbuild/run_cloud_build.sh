@@ -50,6 +50,7 @@ if ! gcloud iam service-accounts describe "${BUILD_SA_EMAIL}" --project "${GOOGL
         gcloud projects add-iam-policy-binding "$GOOGLE_CLOUD_PROJECT" \
             --member="serviceAccount:$BUILD_SA_EMAIL" \
             --role="$ROLE" \
+            --project="$GOOGLE_CLOUD_PROJECT" \
             --condition=None \
             --quiet
     done
@@ -59,6 +60,7 @@ if ! gcloud iam service-accounts describe "${BUILD_SA_EMAIL}" --project "${GOOGL
 fi
 
 gcloud builds submit --config .cloudbuild/cloudbuild.yaml \
+    --project="$GOOGLE_CLOUD_PROJECT" \
     --service-account="projects/${GOOGLE_CLOUD_PROJECT}/serviceAccounts/${BUILD_SA_EMAIL}" \
     --machine-type=e2-highcpu-32 \
     --timeout=120m \
