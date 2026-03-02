@@ -62,10 +62,14 @@ if __name__ == "__main__":
     researcher_eval_failed = False
     print(f"\n🧪 Researcher Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
-    for metric_name, metric_values in eval_results.metrics.items():
-        if metric_values["mean"] < METRIC_THRESHOLD:
-            print(f"🛑 Researcher Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
-            researcher_eval_failed = True
+    if eval_results.state != types.EvaluationRunState.SUCCEEDED:
+        print(f"🛑 Researcher Evaluation failed with state {eval_results.state}.")
+        researcher_eval_failed = True
+    else:
+        for metric_name, metric_values in eval_results.metrics.items():
+            if metric_values["mean"] < METRIC_THRESHOLD:
+                print(f"🛑 Researcher Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
+                researcher_eval_failed = True
     if not researcher_eval_failed:
         print(f"✅ Researcher Evaluation passed.")
 
@@ -87,10 +91,14 @@ if __name__ == "__main__":
     orchestrator_eval_failed = False
     print(f"\n🧪 Orchestrator Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
-    for metric_name, metric_values in eval_results.metrics.items():
-        if metric_values["mean"] < METRIC_THRESHOLD:
-            print(f"🛑 Orchestrator Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
-            orchestrator_eval_failed = True
+    if eval_results.state != types.EvaluationRunState.SUCCEEDED:
+        print(f"🛑 Orchestrator Evaluation failed with state {eval_results.state}.")
+        orchestrator_eval_failed = True
+    else:
+        for metric_name, metric_values in eval_results.metrics.items():
+            if metric_values["mean"] < METRIC_THRESHOLD:
+                print(f"🛑 Orchestrator Evaluation failed with metric `{metric_name}` below {METRIC_THRESHOLD} threshold.")
+                orchestrator_eval_failed = True
     if not orchestrator_eval_failed:
         print(f"✅ Orchestrator Evaluation passed.")
 
