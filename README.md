@@ -30,9 +30,10 @@ multi-agent-eval/
 ├── app/                        # Web App service application
 │   └── frontend/               # Frontend application that uses Web App service API
 ├── evaluator/                  # Evaluation Logic
-│   ├── evaluate_agent.py       # Main script to run Vertex AI evaluations
-│   ├── eval_data_*.json        # Golden Datasets for agents
-│   └── show_run.ipynb          # Notebook to visualize results
+│   ├── evaluate_agent.py                  # Main script to run Vertex AI evaluations
+│   ├── eval_data_*.json                   # Golden Datasets for agents
+│   └── show_evaluation_run.ipynb          # Notebook to visualize results
+│   └── show_evaluation_run_local.ipynb    # Notebook to visualize results of a local run
 ├── shared/                     # Common libraries (symlinked to agents)
 │   ├── evaluation/                    # Shared evaluation logic (engine & metrics)
 │   ├── a2a_utils.py                   # Utilities for A2A Service-to-Service calls
@@ -139,6 +140,8 @@ If the evaluation fails or you want to see details:
 1.  Open [`evaluator/show_evaluation_run.ipynb` in Google Colab](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run.ipynb).
 2. Set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`, `EVAL_RUN_ID` variables.
 3.  Visualize the traces and metric breakdowns to debug.
+
+> If you run experinced a fallback to local execution, use [`evaluator/show_evaluation_run_local.ipynb`](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run_local.ipynb).
 
 ### 4. Deploying Services to "Production"
 Once you are happy with the evaluation results:

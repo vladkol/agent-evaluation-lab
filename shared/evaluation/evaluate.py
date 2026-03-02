@@ -24,6 +24,7 @@ import json
 from pathlib import Path
 import os
 import sys
+import uuid
 from typing import Any, Dict,List, Callable
 
 from httpx import AsyncClient, Limits, HTTPStatusError
@@ -224,22 +225,70 @@ async def evaluate_agent(
         name=evaluation_run.name,
         include_evaluation_items=True
     )
+    eval_results = None
     run_results = AgentEvaluationRunResults(
         run_id=evaluation_run.name.rsplit("/", 1)[-1],
-        run_resource_id=evaluation_run.name
+        run_resource_id=evaluation_run.name,
+        state=evaluation_run.state,
     )
-    print(f"Evaluation run {evaluation_run.name} is {evaluation_run.state}")
-    if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
-        run_results.state = evaluation_run.state
-        run_results.error_message = evaluation_run.error.message
-        if evaluation_run.error.details:
-            run_results.error_message += json.dumps(
-                evaluation_run.error.details, indent=2
+    if evaluation_run.state == types.EvaluationRunState.FAILED:
+        # trying a local run
+        print("⚠️ Remote run failed, trying a local run...")
+        try:
+            local_metrics = []
+            for m in metrics:
+                # If its a EvaluationRunMetric with custom code execution,
+                # we need to convert it to a Metric object.
+                if (
+                    isinstance(m, types.EvaluationRunMetric)
+                    and m.metric_config
+                    and m.metric_config.custom_code_execution_spec
+                ):
+                    code_namespace = {}
+                    exec(
+                        m.metric_config.custom_code_execution_spec.remote_custom_function,
+                        code_namespace
+                    )
+                    evaluate_function = code_namespace["evaluate"]
+                    metric = types.Metric(
+                        name=m.metric,
+                        custom_function=evaluate_function
+                    )
+                    local_metrics.append(metric)
+                else:
+                    local_metrics.append(m)
+            eval_results = client.evals.evaluate(
+                dataset=agent_dataset_with_inference,
+                agent_info=agent_info,
+                metrics=local_metrics,
             )
-        run_results.error_message += f"\nCode: {evaluation_run.error.code}"
-    else:
+            local_id = f"local_{uuid.uuid4()}"
+            save_to_path = f"{evaluation_storage_uri}/{local_id}.json"
+            eval_results_json = eval_results.model_dump_json(
+                indent=2,
+                exclude_none=True,
+                exclude={"evaluation_dataset"},
+            )
+            Blob.from_uri(save_to_path).upload_from_string(
+                eval_results_json,
+                client = storage_client
+            )
+            print(f"✅ Local run results saved to: {save_to_path}")
+            run_results.run_id = save_to_path
+            run_results.run_resource_id = save_to_path
+            run_results.state = types.EvaluationRunState.SUCCEEDED
+        except Exception as e:
+            print(f"🛑 Local run failed: {e}")
+    if not eval_results:
         eval_results = evaluation_run.evaluation_item_results
-        run_results.state = evaluation_run.state
+        if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
+            run_results.error_message = evaluation_run.error.message
+            if evaluation_run.error.details:
+                run_results.error_message += json.dumps(
+                    evaluation_run.error.details, indent=2
+                )
+            run_results.error_message += f"\nCode: {evaluation_run.error.code}"
+    if run_results.state == types.EvaluationRunState.SUCCEEDED:
         run_results.metrics = {
             m.metric_name if hasattr(m, "metric_name")
             else m.name if hasattr(m, "name") else "unknown" : {
