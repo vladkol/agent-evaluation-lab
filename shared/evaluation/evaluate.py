@@ -59,12 +59,16 @@ class AgentEvaluationRunResults:
         self.run_id = run_id
         self.state = state
         self.metrics = metrics
+        self.error_message = ""
 
     def __str__(self):
         return (f"Run ID: {self.run_id}\n"
             f"Run Resource ID: {self.run_resource_id}\n"
             f"State: {self.state}\n"
-            f"Metrics: {json.dumps(self.metrics, indent=2)}")
+            f"Metrics: {json.dumps(self.metrics, indent=2)}"
+                + (f"\nError Message: {self.error_message}"
+                    if self.error_message else "")
+            )
 
 
 async def evaluate_agent(
@@ -151,7 +155,7 @@ async def evaluate_agent(
     httpx_client = AsyncClient(
         auth=tmp_httpx_client.auth,
         timeout=REQUEST_TIMEOUT,
-        limits = Limits(
+        limits=Limits(
             max_connections=MAX_AGENT_REQUESTS * 2,
             max_keepalive_connections=MAX_AGENT_REQUESTS,
             keepalive_expiry=REQUEST_TIMEOUT
@@ -194,13 +198,13 @@ async def evaluate_agent(
 
     # Initialize Evaluation Dataset with Agent responses
     agent_dataset_with_inference = types.EvaluationDataset(
-        eval_dataset_df = eval_df_with_inference,
+        eval_dataset_df=eval_df_with_inference,
     )
 
     # Run Vertex AI Evaluation
     evaluation_run = client.evals.create_evaluation_run(
         dataset=agent_dataset_with_inference,
-        agent_info = agent_info,
+        agent_info=agent_info,
         metrics=metrics,
         dest=evaluation_storage_uri
     )
@@ -217,7 +221,8 @@ async def evaluate_agent(
         evaluation_run = client.evals.get_evaluation_run(name=evaluation_run.name)
         await asyncio.sleep(5)
     evaluation_run = client.evals.get_evaluation_run(
-        name=evaluation_run.name, include_evaluation_items=True
+        name=evaluation_run.name,
+        include_evaluation_items=True
     )
     run_results = AgentEvaluationRunResults(
         run_id=evaluation_run.name.rsplit("/", 1)[-1],
@@ -226,18 +231,18 @@ async def evaluate_agent(
     print(f"Evaluation run {evaluation_run.name} is {evaluation_run.state}")
     if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
         run_results.state = evaluation_run.state
-        run_results.metrics = {
-            m.metric_name if hasattr(m, "metric_name") else m.name : {
-                "mean": 0.0,
-                "stdev": 0.0
-            }
-            for m in metrics
-        }
+        run_results.error_message = evaluation_run.error.message
+        if evaluation_run.error.details:
+            run_results.error_message += json.dumps(
+                evaluation_run.error.details, indent=2
+            )
+        run_results.error_message += f"\nCode: {evaluation_run.error.code}"
     else:
         eval_results = evaluation_run.evaluation_item_results
         run_results.state = evaluation_run.state
         run_results.metrics = {
-            m.metric_name if hasattr(m, "metric_name") else m.name : {
+            m.metric_name if hasattr(m, "metric_name")
+            else m.name if hasattr(m, "name") else "unknown" : {
                 "mean": m.mean_score or 0.0,
                 "stdev": m.stdev_score or 0.0
             }
