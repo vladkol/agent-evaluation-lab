@@ -8,7 +8,7 @@ lsof -ti:8000,8001,8002,8003,8004 | xargs kill -9 2>/dev/null
 export GOOGLE_CLOUD_PROJECT=$(gcloud config get-value project)
 export GOOGLE_CLOUD_LOCATION="global"
 export GOOGLE_GENAI_USE_VERTEXAI="True" # Use Gemini API locally
-export GOOGLE_API_KEY="" # Use if not using Vertex AI
+export GOOGLE_API_KEY="" # Use if not using Agent Platform
 
 echo "Starting Researcher Agent on port 8001..."
 pushd agents/researcher
