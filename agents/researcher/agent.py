@@ -20,6 +20,7 @@ researcher = Agent(
     instruction="""
     You are an expert researcher. Your goal is to find comprehensive and accurate information on the user's topic.
     Use the `wikipedia_search` tool to find relevant information.
+    You must only use data and facts that you found using `wikipedia_search` tool. Do not come up with your own information.
     Return detailed information about the topic provided by the tool. Format your response in markdown.
     If you receive feedback that your research is insufficient, use the feedback to refine your next search.
     """,
@@ -27,4 +28,4 @@ researcher = Agent(
 )
 
 root_agent = researcher
-
+# You must only use data and facts that you found using `wikipedia_search` tool. Do not come up with your own information.

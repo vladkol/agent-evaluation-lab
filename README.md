@@ -2,11 +2,11 @@
 
 This project implements a **Continuous Evaluation Pipeline** for a multi-agent system built with Google Agent Development Kit (ADK) and Agent2Agent (A2A) protocol on [Cloud Run](https://docs.cloud.google.com/run/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog). It features a team of microservice agents that research, judge, and build content, orchestrated to deliver high-quality results.
 
-The goal of this project is to demonstrate **Agentic Engineering** practices for **Continuous Evaluation**: safely deploying agents to shadow revisions, running automated evaluation suites using Vertex AI, and making data-driven decisions on agent deployments and improvements.
+The goal of this project is to demonstrate **Agentic Engineering** practices for **Continuous Evaluation**: safely deploying agents to shadow revisions, running automated evaluation suites using Gemini Enterprise Agent Platform, and making data-driven decisions on agent deployments and improvements.
 
 It is a companion code repository to the codelab [**From "vibe checks" to data-driven Agent Evaluation**](https://codelabs.developers.google.com/codelabs/production-ready-ai-roadshow/2-evaluating-multi-agent-systems/evaluating-multi-agent-systems).
 
-It uses [Vertex AI Gen AI Evaluation Service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
+It uses [Agent Platform Gen AI Evaluation Service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
 
 ## Architecture
 
@@ -30,7 +30,7 @@ multi-agent-eval/
 ├── app/                        # Web App service application
 │   └── frontend/               # Frontend application that uses Web App service API
 ├── evaluator/                  # Evaluation Logic
-│   ├── evaluate_agent.py                  # Main script to run Vertex AI evaluations
+│   ├── evaluate_agent.py                  # Main script to run Agent Platform evaluations
 │   ├── eval_data_*.json                   # Golden Datasets for agents
 │   └── show_evaluation_run.ipynb          # Notebook to visualize results
 │   └── show_evaluation_run_local.ipynb    # Notebook to visualize results of a local run
@@ -75,7 +75,7 @@ The core evaluation logic is decoupled from the specific agent tests and lives i
 
 ### Evaluation Tests
 The `evaluator/` directory contains the specific test definitions for *this* project.
-*   We use **Vertex AI Gen AI Evaluation Service**.
+*   We use **Agent Platform Gen AI Evaluation Service**.
 *   **Metrics**:
     *   `Final Response Match`: Checks if the Researcher supports the correct answer (Golden Dataset).
     *   `Tool Use Quality`: Validates if tool calls are malformed or unnecessary.
@@ -132,7 +132,7 @@ Instead of testing manually, run the full suite:
 1.  Your code is deployed to Cloud Run as a new revision with a tag made of a commit hash (e.g., `https://c-1234abcd---researcher-xyz.run.app`).
 2.  The `evaluator.evaluate_agent` performs the evaluation or Researcher and Orchestrator agents using, respectively, `eval_data_researcher.json` and `eval_data_orchestrator.json` datasets.
        * It sends test prompts to the *tagged* revisions of the deployed agents.
-       * It evaluates the results using Vertex AI Gen AI Evaluation Service.
+       * It evaluates the results using Agent Platform Gen AI Evaluation Service.
 5.  It prints a summary of Pass/Fail metrics.
 
 ### 3. Analyze Results
@@ -177,5 +177,5 @@ In a real system, you would want to create a [Cloud Build Trigger](https://docs.
 *   [Cloud Run](https://docs.cloud.google.com/run/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
 *   [Agent Development Kit](https://google.github.io/adk-docs/)
 *   [Agent2Agent Protocol (A2A)](https://a2a-protocol.org/)
-*   [Vertex AI Evaluation Documentation](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
+*   [Agent Platform Evaluation Documentation](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
 *   [Google Cloud Run Revisions and Gradual Rolloout](https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)

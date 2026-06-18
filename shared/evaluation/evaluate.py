@@ -15,7 +15,7 @@
 Evaluation module for Agent Runtime.
 
 This module provides functionality to evaluate agents by running inference against
-a dataset of prompts and calculating metrics using Vertex AI Evaluation.
+a dataset of prompts and calculating metrics using Agent Platform Gen AI Evaluation Service.
 """
 
 import asyncio
@@ -88,21 +88,21 @@ async def evaluate_agent(
     1.  Reads evaluation data from a file (local or GCS).
     2.  Runs parallel inference against the agent API.
     3.  Uploads the inference results and original data to GCS.
-    4.  Runs Vertex AI Evaluation using the provided metrics.
+    4.  Runs Agent Platform Evaluation using the provided metrics.
 
     Args:
         agent_api_server: Base URL of the agent's API server.
         agent_name: Name of the agent service.
         evaluation_data_file: Path or URI to the evaluation dataset (JSON, JSONL, CSV, Parquet).
         evaluation_storage_uri: GCS URI for storing evaluation artifacts.
-        metrics: List of Vertex AI metrics to calculate.
+        metrics: List of Agent Platform Evaluation Metrics metrics to calculate.
         project_id: Google Cloud project ID.
         location: Google Cloud location.
 
     Returns:
         AgentEvaluationRunResults - results of the evaluation run.
     """
-    # Initialize Vertex AI client
+    # Initialize Agent Platform client
     init(
         project=project_id,
         location=location,
@@ -187,7 +187,7 @@ async def evaluate_agent(
     except Conflict:
         pass
 
-    # Run inference in parallel to generate agent responses
+    # Run inference in parallel to generate agent responses merged with the evaluation dataset
     print("Running agent inference...")
     eval_df_with_inference = await run_parallel_inference(
         httpx_client,
@@ -202,7 +202,7 @@ async def evaluate_agent(
         eval_dataset_df=eval_df_with_inference,
     )
 
-    # Run Vertex AI Evaluation
+    # Run Agent Evaluation with the combined dataset
     evaluation_run = client.evals.create_evaluation_run(
         dataset=agent_dataset_with_inference,
         agent_info=agent_info,
@@ -305,7 +305,7 @@ def get_custom_function_metric(
     metrics_function: Callable
 ) -> types.EvaluationRunMetric:
     """
-    Creates a custom function metric for Vertex AI Evaluation.
+    Creates a custom function metric for Agent Platform Evaluation.
 
     Args:
         metric_name: Name of the metric.
