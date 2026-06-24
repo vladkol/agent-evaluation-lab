@@ -173,6 +173,33 @@ It also shows how to create a Service Account with the necessary permissions to 
 
 In a real system, you would want to create a [Cloud Build Trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that runs the pipeline when a new commit is pushed to the repository. In that case, `SHORT_SHA` substitution variable will be automatically set to the commit hash of the new commit, and `cloudbuild.yaml` handles that.
 
+## Running Evaluation of Local Agents
+
+You can run agents locally without deploying them to Cloud Run.
+
+1. Edit `.env` file by adding local agents URLs:
+
+```
+RESEARCHER_URL="http://localhost:8001"
+ORCHESTRATOR_URL="http://localhost:8004"
+```
+
+2. Launch the agents locally:
+
+```bash
+./run_local.sh
+```
+
+3. Run evaluation:
+
+```bash
+uv run -m evaluator.evaluate_agent
+```
+
+> It will still use Gemini Enterprise Agent Platform for evaluating agents responses,
+> but without deploying agents to Cloud Run, so all requests to agents will happen on your machine.
+> This is sometimes useful for faster development iterations.
+
 ## Links
 *   [Cloud Run](https://docs.cloud.google.com/run/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog)
 *   [Agent Development Kit](https://google.github.io/adk-docs/)
