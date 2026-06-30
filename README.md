@@ -6,7 +6,7 @@ The goal of this project is to demonstrate **Agentic Engineering** practices for
 
 It is a companion code repository to the codelab [**From "vibe checks" to data-driven Agent Evaluation**](https://codelabs.developers.google.com/codelabs/production-ready-ai-roadshow/2-evaluating-multi-agent-systems/evaluating-multi-agent-systems).
 
-It uses [Agent Platform Gen AI Evaluation Service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
+It uses [Agent Platform GenAI Evaluation Service](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) that provides enterprise-grade tools for objective, data-driven assessment of generative AI models and agents.
 
 ## Architecture
 
@@ -67,7 +67,7 @@ The core evaluation logic is decoupled from the specific agent tests and lives i
 *   **`evaluate.py`**: The Evaluation Engine.
     *   **Parallel Inference**: Runs the evaluation dataset against the agent API in parallel `asyncio`.
     *   **Data Management**: Uploads both the inference results/traces and the original dataset to GCS.
-    *   **Vertex Integration**: Trigger a Vertex Gen AI Evaluation Service Run to calculate metrics (both Rubric and Custom).
+    *   **Vertex Integration**: Trigger a Vertex GenAI Evaluation Service Run to calculate metrics (both Rubric and Custom).
 *   **`tool_metrics.py`**: Custom Metric Definitions.
     *   Implements **Trajectory** metrics that usually require custom logic not found in standard LLM evaluators.
     *   `trajectory_exact_match`: Did the agent call the exact sequence of tools?
@@ -75,7 +75,7 @@ The core evaluation logic is decoupled from the specific agent tests and lives i
 
 ### Evaluation Tests
 The `evaluator/` directory contains the specific test definitions for *this* project.
-*   We use **Agent Platform Gen AI Evaluation Service**.
+*   We use **Agent Platform GenAI Evaluation Service**.
 *   **Metrics**:
     *   `Final Response Match`: Checks if the Researcher supports the correct answer (Golden Dataset).
     *   `Tool Use Quality`: Validates if tool calls are malformed or unnecessary.
@@ -132,7 +132,7 @@ Instead of testing manually, run the full suite:
 1.  Your code is deployed to Cloud Run as a new revision with a tag made of a commit hash (e.g., `https://c-1234abcd---researcher-xyz.run.app`).
 2.  The `evaluator.evaluate_agent` performs the evaluation or Researcher and Orchestrator agents using, respectively, `eval_data_researcher.json` and `eval_data_orchestrator.json` datasets.
        * It sends test prompts to the *tagged* revisions of the deployed agents.
-       * It evaluates the results using Agent Platform Gen AI Evaluation Service.
+       * It evaluates the results using Agent Platform GenAI Evaluation Service.
 5.  It prints a summary of Pass/Fail metrics.
 
 ### 3. Analyze Results
@@ -141,7 +141,7 @@ If the evaluation fails or you want to see details:
 2. Set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_REGION`, `EVAL_RUN_ID` variables.
 3.  Visualize the traces and metric breakdowns to debug.
 
-> If you run experinced a fallback to local execution, use [`evaluator/show_evaluation_run_local.ipynb`](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run_local.ipynb).
+> If your run experienced a fallback to local execution, use [`evaluator/show_evaluation_run_local.ipynb`](https://colab.research.google.com/github/vladkol/agent-evaluation-lab/blob/main/evaluator/show_evaluation_run_local.ipynb).
 
 ### 4. Deploying Services to "Production"
 Once you are happy with the evaluation results:
@@ -152,7 +152,7 @@ Once you are happy with the evaluation results:
 
 (Without flags, this deploys to the `latest` revision and routes 100% traffic to it).
 
-## Continous Integration and Deployment (CI/CD)
+## Continuous Integration and Deployment (CI/CD)
 
 In a production system, the agent evaluation should be run as part of the CI/CD pipeline. [Cloud Build](https://cloud.google.com/build/docs?utm_campaign=CDR_0xc245fc42_default_b473562939&utm_medium=external&utm_source=blog) is a good choice for that.
 

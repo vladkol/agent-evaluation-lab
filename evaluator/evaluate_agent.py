@@ -34,6 +34,7 @@ RESEARCHER_URL = os.environ["RESEARCHER_URL"]
 ORCHESTRATOR_URL = os.environ["ORCHESTRATOR_URL"]
 GOOGLE_CLOUD_PROJECT = os.environ["GOOGLE_CLOUD_PROJECT"]
 GOOGLE_CLOUD_REGION = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
+LOCAL_EVAL = os.getenv("LOCAL_EVAL", "false").lower() == "true"
 
 if __name__ == "__main__":
     researcher_eval_failed = False
@@ -57,6 +58,7 @@ if __name__ == "__main__":
             metrics=metrics, # The metrics to calculate.
             project_id=GOOGLE_CLOUD_PROJECT,
             location=GOOGLE_CLOUD_REGION,
+            local_evaluation=LOCAL_EVAL
         )
     )
     researcher_eval_failed = False
@@ -88,6 +90,7 @@ if __name__ == "__main__":
         metrics=metrics,
         project_id=GOOGLE_CLOUD_PROJECT,
         location=GOOGLE_CLOUD_REGION,
+        local_evaluation=LOCAL_EVAL
     ))
     print(f"\n🧪 Orchestrator Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")

@@ -15,7 +15,7 @@
 Evaluation module for Agent Runtime.
 
 This module provides functionality to evaluate agents by running inference against
-a dataset of prompts and calculating metrics using Agent Platform Gen AI Evaluation Service.
+a dataset of prompts and calculating metrics using Agent Platform GenAI Evaluation Service.
 """
 
 import asyncio
@@ -80,6 +80,7 @@ async def evaluate_agent(
     metrics: List[types.Metric],
     project_id: str,
     location: str,
+    local_evaluation: bool = False,
 ) -> AgentEvaluationRunResults:
     """
     Evaluates an agent against a given dataset.
@@ -202,39 +203,52 @@ async def evaluate_agent(
     agent_dataset_with_inference = types.EvaluationDataset(
         eval_dataset_df=eval_df_with_inference,
     )
+    eval_results = None
 
     # Run Agent Evaluation with the combined dataset
-    evaluation_run = client.evals.create_evaluation_run(
-        dataset=agent_dataset_with_inference,
-        # agent_info=agent_info,
-        metrics=metrics,
-        dest=evaluation_storage_uri
-    )
+    if not local_evaluation:
+        evaluation_run = client.evals.create_evaluation_run(
+            dataset=agent_dataset_with_inference,
+            # agent_info=agent_info,
+            metrics=metrics,
+            dest=evaluation_storage_uri
+        )
+        completed_states = set(
+            [
+                types.EvaluationRunState.SUCCEEDED,
+                types.EvaluationRunState.FAILED,
+                types.EvaluationRunState.CANCELLED,
+            ]
+        )
+        while evaluation_run.state not in completed_states:
+            print(f"Evaluation {evaluation_run.name} run is {evaluation_run.state}")
+            evaluation_run = client.evals.get_evaluation_run(name=evaluation_run.name)
+            await asyncio.sleep(5)
+        evaluation_run = client.evals.get_evaluation_run(
+            name=evaluation_run.name,
+            include_evaluation_items=True
+        )
+        run_results = AgentEvaluationRunResults(
+            run_id=evaluation_run.name.rsplit("/", 1)[-1],
+            run_resource_id=evaluation_run.name,
+            state=evaluation_run.state,
+        )
+        eval_results = evaluation_run.evaluation_item_results
+        if evaluation_run.state == types.EvaluationRunState.FAILED:
+            # If remote run failed, trying a local run
+            print("⚠️ Remote run failed, trying a local run...")
+            local_evaluation = True
+            run_results.error_message = evaluation_run.error.message
+            if evaluation_run.error.details:
+                run_results.error_message += json.dumps(
+                    evaluation_run.error.details, indent=2
+                )
+            else:
+                run_results.error_message = ""
+            run_results.error_message += f"\nCode: {evaluation_run.error.code}"
 
-    completed_states = set(
-        [
-            types.EvaluationRunState.SUCCEEDED,
-            types.EvaluationRunState.FAILED,
-            types.EvaluationRunState.CANCELLED,
-        ]
-    )
-    while evaluation_run.state not in completed_states:
-        print(f"Evaluation {evaluation_run.name} run is {evaluation_run.state}")
-        evaluation_run = client.evals.get_evaluation_run(name=evaluation_run.name)
-        await asyncio.sleep(5)
-    evaluation_run = client.evals.get_evaluation_run(
-        name=evaluation_run.name,
-        include_evaluation_items=True
-    )
-    eval_results = None
-    run_results = AgentEvaluationRunResults(
-        run_id=evaluation_run.name.rsplit("/", 1)[-1],
-        run_resource_id=evaluation_run.name,
-        state=evaluation_run.state,
-    )
-    if evaluation_run.state == types.EvaluationRunState.FAILED:
-        # trying a local run
-        print("⚠️ Remote run failed, trying a local run...")
+    if local_evaluation:
+        print("⚙️ Running local evaluation...")
         try:
             local_metrics = []
             for m in metrics:
@@ -275,21 +289,21 @@ async def evaluate_agent(
                 client = storage_client
             )
             print(f"✅ Local run results saved to: {save_to_path}")
-            run_results.run_id = save_to_path
-            run_results.run_resource_id = save_to_path
-            run_results.state = types.EvaluationRunState.SUCCEEDED
+            run_results = AgentEvaluationRunResults(
+                run_id=save_to_path,
+                run_resource_id=save_to_path,
+                state=types.EvaluationRunState.SUCCEEDED,
+            )
         except Exception as e:
             print(f"🛑 Local run failed: {e}")
-    if not eval_results:
-        eval_results = evaluation_run.evaluation_item_results
-        if evaluation_run.state != types.EvaluationRunState.SUCCEEDED:
-            run_results.error_message = evaluation_run.error.message
-            if evaluation_run.error.details:
-                run_results.error_message += json.dumps(
-                    evaluation_run.error.details, indent=2
-                )
-            run_results.error_message += f"\nCode: {evaluation_run.error.code}"
-    if run_results.state == types.EvaluationRunState.SUCCEEDED:
+            run_results = AgentEvaluationRunResults(
+                run_id="(none)",
+                run_resource_id="(none)",
+                state=types.EvaluationRunState.FAILED
+            )
+            run_results.error_message = str(e)
+
+    if run_results.state == types.EvaluationRunState.SUCCEEDED and eval_results:
         run_results.metrics = {
             m.metric_name if hasattr(m, "metric_name")
             else m.name if hasattr(m, "name") else "unknown" : {
