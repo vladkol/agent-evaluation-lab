@@ -1,7 +1,7 @@
 from google.adk.agents import Agent
 
 
-MODEL = "gemini-3-flash-preview"
+MODEL = "gemini-3.5-flash"
 
 # --- Content Builder Agent ---
 content_builder = Agent(

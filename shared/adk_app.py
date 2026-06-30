@@ -308,9 +308,14 @@ def main(
             tools_dict_list = [t.model_dump(exclude_none=True) for t in  await get_tool_functions(tools)]
             agent_eval_info = {
                 "name": agent.name,
-                "description": str(getattr(agent, "description", None)),
-                "instruction": str(getattr(agent, "instruction", None)),
-                "tool_declarations": tools_dict_list
+                "agents": {
+                    agent_name: {
+                        "agent_id": agent.name,
+                        "description": str(getattr(agent, "description", "")),
+                        "instruction": str(getattr(agent, "instruction", "")),
+                        "tools": tools_dict_list
+                    }
+                }
             }
             return agent_eval_info
 

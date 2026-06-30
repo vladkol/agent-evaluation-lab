@@ -12,7 +12,7 @@ dependencies = [
     "opentelemetry-instrumentation-asgi",
     "opentelemetry-instrumentation-google-genai>=0.3b0, <1.0.0",
     "python-dotenv",
-    "wikipedia"
+    "wikipedia-api==0.15.0"
 ]
 
 [[tool.uv.index]]

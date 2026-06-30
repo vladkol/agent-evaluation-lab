@@ -148,6 +148,7 @@ async def evaluate_agent(
             state={},
         )
     eval_data_df["session_inputs"] = [session_inputs] * len(eval_data_df)
+    eval_data_df["evaluate_intermediate_nl_responses"] = [True] * len(eval_data_df)
 
     # Initialize authenticated HTTP client
     tmp_httpx_client = create_traced_authenticated_client(
@@ -205,7 +206,7 @@ async def evaluate_agent(
     # Run Agent Evaluation with the combined dataset
     evaluation_run = client.evals.create_evaluation_run(
         dataset=agent_dataset_with_inference,
-        agent_info=agent_info,
+        # agent_info=agent_info,
         metrics=metrics,
         dest=evaluation_storage_uri
     )

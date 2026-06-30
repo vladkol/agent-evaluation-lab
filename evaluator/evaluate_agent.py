@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import json
 import os
 
 from vertexai import types # type: ignore
@@ -74,6 +73,7 @@ if __name__ == "__main__":
     if not researcher_eval_failed:
         print(f"✅ Researcher Evaluation passed.")
 
+    orchestrator_eval_failed = False
     print(f"\n🧪 Evaluating Orchestrator")
     eval_data_orchestrator = os.path.dirname(__file__) + "/eval_data_orchestrator.json"
     metrics=[
@@ -89,7 +89,6 @@ if __name__ == "__main__":
         project_id=GOOGLE_CLOUD_PROJECT,
         location=GOOGLE_CLOUD_REGION,
     ))
-    orchestrator_eval_failed = False
     print(f"\n🧪 Orchestrator Evaluation results:\n{eval_results}")
     print(f"Evaluation Run ID: {eval_results.run_id}")
     if eval_results.state != types.EvaluationRunState.SUCCEEDED:

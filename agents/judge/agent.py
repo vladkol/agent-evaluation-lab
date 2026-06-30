@@ -3,7 +3,7 @@ from google.adk.agents import Agent
 from pydantic import BaseModel, Field
 
 
-MODEL = "gemini-3-flash-preview"
+MODEL = "gemini-3.5-flash"
 
 # --- Data Models ---
 class JudgeFeedback(BaseModel):

@@ -9,15 +9,15 @@ dependencies = [
     "google-adk==1.22.0",
     "opentelemetry-instrumentation-asgi",
     "google-cloud-logging==3.13.0",
-    "google-cloud-aiplatform[evaluation]==1.133.0",
-    "vertexai==1.43.*",
+    "google-cloud-aiplatform[evaluation]==1.158.0",
     "fastapi==0.123.*",
     "uvicorn==0.40.0",
     "psycopg2-binary==2.9.*",
     "a2a-sdk==0.3.*",
     "python-dotenv",
     "pip",
-    "wikipedia"
+    "wikipedia-api==0.15.0",
+    "pyOpenSSL"
 ]
 
 requires-python = ">=3.10,<3.14"
